@@ -51,6 +51,7 @@ It runs on your server, works offline, and installs as an app on Android, iPhone
   <img src="docs/screenshots/chat.png" width="200" alt="Everyday chat: quick dinner ideas">
   <img src="docs/screenshots/me.png" width="200" alt="Settings: optional streaks, pause, goals, shop, adventures, insights">
 </p>
+<p align="center"><sub>Screenshots use a demo account with made-up data.</sub></p>
 
 > **Not therapy, not a medical device.** Pippin is a self-help wellbeing tool for adults. Questionnaires are
 > screening tools, not diagnoses. If you're struggling, speak to your GP. **In crisis (UK):** Samaritans
