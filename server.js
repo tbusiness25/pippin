@@ -1,3 +1,4 @@
+require('./src/env');   // .env + AI_PROVIDER presets — must load first
 const express = require('express');
 const cookieParser = require('cookie-parser');
 const path = require('path');

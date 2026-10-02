@@ -9,7 +9,7 @@ function openaiClient({ baseUrl, apiKey, model, extraBody = {}, timeoutMs = 1200
     const res = await fetch(`${baseUrl.replace(/\/$/, '')}/chat/completions`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', ...(apiKey ? { Authorization: `Bearer ${apiKey}` } : {}) },
-      body: JSON.stringify({ model, messages, stream: false, ...(json ? { temperature: 0.4 } : {}), ...extraBody }),
+      body: JSON.stringify({ model, messages, stream: false, ...(json && !/^(o\d|gpt-5)/i.test(model) ? { temperature: 0.4 } : {}), ...extraBody }),
       signal: AbortSignal.timeout(timeoutMs),
     });
     if (!res.ok) throw new Error(`brain HTTP ${res.status}: ${(await res.text()).slice(0, 200)}`);

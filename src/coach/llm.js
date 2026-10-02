@@ -21,8 +21,13 @@ async function chat(messages, { tools, temperature = 0.6, maxTokens = 700 } = {}
   if (!configured()) throw new Error('Coach model not configured (COACH_BASE_URL / COACH_MODEL)');
   const url = new URL(`${BASE}/chat/completions`);
   if (url.host !== ALLOWED_HOST) throw new Error('refusing to call a host other than COACH_BASE_URL');
+  // OpenAI's newer models want max_completion_tokens, and reasoning models only accept the default temperature.
+  const openai = url.host === 'api.openai.com';
+  const reasoning = /^(o\d|gpt-5)/i.test(MODEL);
   const body = {
-    model: MODEL, messages, temperature, max_tokens: maxTokens, stream: false,
+    model: MODEL, messages, stream: false,
+    ...(openai ? { max_completion_tokens: maxTokens } : { max_tokens: maxTokens }),
+    ...(openai && reasoning ? {} : { temperature }),
     ...(process.env.COACH_REASONING_EFFORT ? { reasoning_effort: process.env.COACH_REASONING_EFFORT } : {}),
     ...(tools?.length ? { tools, tool_choice: 'auto' } : {}),
   };
@@ -32,7 +37,7 @@ async function chat(messages, { tools, temperature = 0.6, maxTokens = 700 } = {}
     body: JSON.stringify(body),
     signal: AbortSignal.timeout(parseInt(process.env.COACH_TIMEOUT_MS || '120000', 10)),
   });
-  if (!res.ok) throw new Error(`coach model HTTP ${res.status}`);   // never log bodies
+  if (!res.ok) throw new Error(`coach model HTTP ${res.status}${res.status === 401 ? ' (check the API key)' : res.status === 404 ? ' (check the model name)' : ''}`);   // never log bodies
   const data = await res.json();
   const msg = data.choices?.[0]?.message || {};
   // Some local models leak <think> blocks into content; strip them.
