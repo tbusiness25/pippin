@@ -13,7 +13,7 @@
     if (!id) {
       const { threads, web } = await api('/api/chat/threads');
       $app.innerHTML = `${modeSwitch('chat')}<div class="row"><h1 class="grow">Chat</h1><button class="btn" id="new">+ New</button></div>
-        <p class="small muted" style="margin-top:-6px">Ask anything — writing, ideas, how-to, questions. ${web ? '🌐 Can search the web (search terms leave your network).' : '🔒 Private, no web.'} For planning or how you’re feeling, use Coach.</p>
+        <p class="small muted" style="margin-top:4px">Ask anything — writing, ideas, how-to, questions. ${web ? '🌐 Can search the web (search terms leave your network).' : '🔒 Private, no web.'} For planning or how you’re feeling, use Coach.</p>
         <div class="card">${threads.length ? threads.map((t) => `<a class="friend" href="#chat/${t.id}" style="text-decoration:none;color:inherit"><div class="grow"><b>${esc(t.title)}</b><div class="small muted">${new Date(t.updated_at).toLocaleString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</div></div><span>›</span></a>`).join('') : '<p class="muted">No chats yet.</p>'}</div>`;
       document.getElementById('new').onclick = async () => { const r = await api('/api/chat/threads', { body: {} }); location.hash = `#chat/${r.thread.id}`; };
       return;

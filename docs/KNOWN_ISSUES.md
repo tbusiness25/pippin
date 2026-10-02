@@ -37,5 +37,4 @@ The live list is in GitHub Issues — this file is the snapshot at release, so n
 | B8 | The optional live WhatsApp link uses an unofficial library (Baileys). It may break, and WhatsApp may restrict accounts that use it — the export importer is the safer route |
 | B9 | No automated unit/integration tests yet — only the safety red-team script |
 | B10 | Accessibility hasn't been audited (screen readers, contrast, reduced motion) |
-| B12 | Habits screen: the "+ New" button overlaps the intro text at phone width |
 | B11 | `BRAIN=hermes` (calendar/email planning) needs a separately-run Hermes Agent and takes 1–3 minutes |

@@ -32,7 +32,7 @@
     const showWeeks = F.state?.user?.settings?.streaks_enabled !== false;
     $app.innerHTML = `<a href="#home" class="btn ghost" style="padding-left:0">‹ Home</a>
       <div class="row"><h1 class="grow">Habits</h1><button class="btn" id="add">+ New</button></div>
-      <p class="small muted" style="margin-top:-6px">Habits take about two months to stick, and a missed day barely matters. Build ${d.maxBuilding} at most at once — small and anchored to something you already do.</p>
+      <p class="small muted" style="margin-top:4px">Habits take about two months to stick, and a missed day barely matters. Build ${d.maxBuilding} at most at once — small and anchored to something you already do.</p>
       ${d.freshStart && building.length ? '<div class="banner small">🌅 Fresh start — new week. The mini version counts in full.</div>' : ''}
       ${building.length ? building.map((h) => habitCard(h, showWeeks)).join('') : '<div class="card"><p class="muted">No habits yet. Start with one tiny thing anchored to your day — “After I pour my coffee, I take my meds.”</p></div>'}
       ${parked.length ? `<h2 style="margin-top:18px">Parking lot</h2><p class="small muted">Saved for later, so they’re not on your mind.</p>${parked.map((h) => habitCard(h, false)).join('')}` : ''}`;
