@@ -31,7 +31,7 @@ async function init() {
 
 /** Send once per (user, kind, ref). Returns number of devices reached. */
 // Kinds that count toward the daily cap and respect "quiet today". Plans, homecomings and friends don't.
-const CAPPED = new Set(['voice', 'monthly-check', 'pledge', 'sober', 'habit', 'event', 'fresh', 'lapse-followup', 'morning', 'evening']);
+const CAPPED = new Set(['agent-tick', 'voice', 'monthly-check', 'pledge', 'sober', 'habit', 'event', 'fresh', 'lapse-followup', 'morning', 'evening']);
 
 async function notify(uid, kind, body, { ref, title = APP_NAME, url = '/#home', actions, data } = {}) {
   if (!ready) return 0;

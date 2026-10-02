@@ -46,9 +46,14 @@ Basis: docs/research/reports/ADHD coach app blueprint.md.
 | H17 | Exposure on a shared phone | Discreet mode default; notification text never names a substance; app lock (PIN, works offline) default 5 min |
 | H18 | Notification overload / shame | Max 4/day default, "quiet today", one follow-up only after a lapse, never broken-streak or "missed X days" alerts |
 
+| # | Hazard | Controls |
+|---|---|---|
 | H19 | Shared PDF exposes more than intended | Person picks the date range and every section; written notes, reflections and journal OFF by default; coach conversations never included; PDF built in-process (pdfkit), never sent to another service; cover page says self-reported, not a clinical record |
 | H20 | Questionnaire scores read as diagnosis | Labelled "screening, not a diagnosis" in app and PDF; PHQ-9 item 9 endorsement shown explicitly in the PDF for clinicians and triggers support in-app |
 | H21 | Dangerous withdrawal for newly added substances | spice and pregabalin/gabapentin = no quit flow without acknowledging medical support; codeine = overdose card + paracetamol warning; nitrous = B12/nerve-damage symptoms → GP/111; ketamine = bladder symptoms → GP |
+| H22 | Agent-linked goals pressure or shame (money, body targets) | "Not yet" is silent and neutral — no nudge, no red state, no failure count; only success notifies; guide tells people to delete goals that feel like pressure Residual: low–medium. |
+| H23 | Agent acts instead of reading (sends, pays, changes) | Every agent prompt says read-only; docs require read-only credentials; Pippin never passes credentials — residual risk sits with the agent's own permissions. Residual: medium. |
+| H24 | Sensitive financial/health detail stored or leaked via the agent's answer | Evidence capped at ~100 chars, asked to omit names/account numbers, encrypted at rest; never sent to the coach model or push. Residual: low. |
 
 ## Re-testing
 ```

@@ -1,14 +1,34 @@
 # Pippin 🌱
 
-**A gentle, self-hosted companion for ADHD brains, with a private AI coach, habits and a no-shame sobriety tracker.**
+**The ADHD coach that can actually see your life, on your terms.**
 
-You hatch a small moss creature called a *sprig*. Small acts of self-care give it energy: drinking water, taking
-your meds, replying to that one email. When its energy bar is full it goes off on an adventure and comes home with
-a little story. It never gets sad, sick or smaller because you were away.
+Most ADHD apps only know what you remember to tell them, which is exactly the problem. Pippin connects to **your own
+AI agent** (such as [Hermes Agent](https://github.com/NousResearch/hermes-agent)), and that agent can read whatever you
+choose to give it: your inbox, your calendar, your bank balance, your sleep and steps. So your goals can be about
+real life, and they can tick themselves off:
 
-Around the pet is a toolkit built from the ADHD, habit and relapse-prevention research:
+| You set a goal | Your agent checks… | …using a tool you connected |
+|---|---|---|
+| Keep a cushion before payday | "Is my current account above £200?" | Your bank, via Firefly III or an open-banking sync |
+| Don't let email pile up | "Have I replied to everything in my inbox older than 2 days?" | Gmail (or any mailbox your agent can read) |
+| Sleep properly | "Did I sleep at least 7 hours last night?" | Garmin, Oura, Whoop, Apple Health or Fitbit via [Open Wearables](https://github.com/the-momentum/open-wearables) |
+| Move a bit | "Have I done 6,000 steps today?" | The same wearable link |
+| Don't miss the school stuff | "Is there anything from school in my inbox that needs a reply?" | Gmail |
+| Pay the card on time | "Has the credit card been paid this month?" | Your bank |
 
-- **An ADHD coach** that makes if-then plans, breaks tasks into two-minute steps, keeps one inbox and nudges
+When it's true, the goal ticks and your sprig gets the energy. When it isn't, **nothing happens**: no red mark, no
+nagging. And "plan my day" builds your plan from what's actually in your calendar and inbox today.
+
+**You decide how much it sees.** Give the agent nothing and Pippin still works as a complete companion. Give it email
+only, or everything. The access lives in *your* agent, with *your* credentials, on *your* server. Pippin never
+holds your bank or email passwords; it asks the agent read-only questions. See [docs/AGENT.md](docs/AGENT.md).
+
+### And the rest of the companion
+You hatch a small moss creature called a *sprig*. Small acts of self-care give it energy. When its energy bar is
+full it goes off on an adventure and comes home with a little story. It never gets sad, sick or smaller because
+you were away. Around it:
+
+- **A private ADHD coach** that makes if-then plans, breaks tasks into two-minute steps, keeps one inbox and nudges
   you at the right moment. Run it on **your own model (Ollama)** or bring an API key for **ChatGPT, Claude, Gemini
   or OpenRouter**. Crisis handling is code, not a prompt.
 - **Habits** scored on strength rather than streaks. A missed day dents the score; it doesn't wipe your progress.
@@ -20,12 +40,13 @@ Around the pet is a toolkit built from the ADHD, habit and relapse-prevention re
 It runs on your server, works offline, and installs as an app on Android, iPhone and desktop.
 
 <p align="center">
-  <img src="docs/screenshots/home.png" width="200" alt="Home: the sprig in its room, energy bar and good days">
+  <img src="docs/screenshots/goals.png" width="200" alt="Goals ticked by your agent: bank cushion, inbox, sleep">
   <img src="docs/screenshots/coach.png" width="200" alt="The coach turning 'I can't start my tax return' into a first step and a 9am nudge">
+  <img src="docs/screenshots/home.png" width="200" alt="Home: the sprig in its room, energy bar and good days">
   <img src="docs/screenshots/habits.png" width="200" alt="Habits with strength scores and Done / Mini / Rest day buttons">
-  <img src="docs/screenshots/sober.png" width="200" alt="Sobriety tracker: 45 alcohol-free days, an urge button and event plans">
 </p>
 <p align="center">
+  <img src="docs/screenshots/sober.png" width="200" alt="Sobriety tracker: 45 alcohol-free days, an urge button and event plans">
   <img src="docs/screenshots/explore.png" width="200" alt="Explore: habits, quitting, coach skills, breathing, sounds, focus timer, stretches">
   <img src="docs/screenshots/chat.png" width="200" alt="Everyday chat: quick dinner ideas">
   <img src="docs/screenshots/me.png" width="200" alt="Settings: optional streaks, pause, goals, shop, adventures, insights">
@@ -36,17 +57,23 @@ It runs on your server, works offline, and installs as an app on Android, iPhone
 > 116 123 · text SHOUT to 85258 · emergency 999. Elsewhere: [findahelpline.com](https://findahelpline.com).
 
 **Contents:** [Why](#why-another-adhd-app) · [Features](#features) · [Install](#install) · [Choosing an AI](#choosing-an-ai)
-· [HTTPS and your phone](#https-and-installing-on-your-phone) · [Updating and backups](#updating-and-backups)
-· [Configuration](#configuration) · [Safety and privacy](#safety-and-privacy) · [Contributing](#contributing)
+· [Connecting your agent](#connecting-your-agent) · [HTTPS and your phone](#https-and-installing-on-your-phone)
+· [Updating and backups](#updating-and-backups) · [Configuration](#configuration) · [Safety and privacy](#safety-and-privacy)
 
 ## Why another ADHD app?
 There are good pet apps (Finch), good ADHD planners (Tiimo, Sprout), good sobriety apps (I Am Sober, Reframe) and
-good habit trackers (Loop). None of them puts all of this in one place, and they all keep your mental-health data
-on someone else's cloud, often with a paid AI on top. Pippin is:
+good habit trackers (Loop). They all share two limits:
 
-- **One place:** the pet keeps you coming back, and the tools are there when you do.
+1. **They're blind.** They only know what you type in, and ADHD is the condition of forgetting to type it in. None
+   of them can see that the bill went out, the email is three days old, or you slept four hours.
+2. **They're someone else's cloud.** Your mental-health data, often with a paid AI on top.
+
+Pippin is:
+
+- **Connected:** goals and plans built on your real inbox, calendar, money and health, through an agent you control.
 - **Private:** self-hosted, encrypted at rest, no telemetry. With a local model, nothing leaves your network.
 - **Forgiving by design:** no decay, no lost progress, no guilt copy, no streak resets used as punishment.
+- **One place:** the pet keeps you coming back, and the tools are there when you do.
 - **Free:** no ads, no paywalled self-care. Cosmetics are earned in-app.
 
 ## Features
@@ -55,6 +82,7 @@ The short version. The full list is in [FEATURES.md](FEATURES.md).
 | | |
 |---|---|
 | 🌱 **Companion** | Hatch and name a sprig; 5 growth stages; adventures with stories; outfits, furniture and room themes; seasonal events; it never decays |
+| 🔗 **Agent-linked goals** | Goals your own agent checks and ticks: money, email, calendar, sleep, steps, whatever its tools can read; "plan my day" from your real calendar and inbox |
 | ✅ **Goals and check-ins** | Tiny self-care goals with two-minute first steps; morning and evening mood check-ins; insights on what lifts your mood |
 | 💬 **Coach** | Morning plan, evening debrief, weekly review, can't-start, thought check, before-a-hard-thing, pause-before-acting; if-then plans with nudges; one inbox; local voice |
 | 🔁 **Habits** | "After I…, I will…" habits; X days a week; habit strength (Loop formula); Done / Mini / Rest day from the notification; max 3 building at once |
@@ -177,6 +205,28 @@ conversations go. Crisis detection, the helplines and everything outside the AI 
 **Mixing models** is possible: a local model for the coach and a cloud one for stories, for example. See
 "Advanced" in [`.env.example`](.env.example).
 
+## Connecting your agent
+Optional, and the part that makes Pippin different. The full guide, with examples for email, banking and
+wearables, is [docs/AGENT.md](docs/AGENT.md). In short:
+
+1. Run an agent with an OpenAI-compatible API. [Hermes Agent](https://github.com/NousResearch/hermes-agent) is the
+   tested one: turn on its API server (`API_SERVER_ENABLED=true`, `API_SERVER_KEY=…`).
+2. Give **the agent** the tools you want Pippin to benefit from: Google Workspace for Gmail and Calendar, an
+   [Open Wearables](https://github.com/the-momentum/open-wearables) MCP server for health data, your finance app's API
+   for balances. Prefer read-only access everywhere.
+3. Tell Pippin where it is:
+   ```ini
+   BRAIN=hermes                       # or BRAIN=agent for any other OpenAI-compatible agent
+   HERMES_API_URL=http://hermes:8642/v1
+   HERMES_API_KEY=your-api-server-key
+   AGENT_SOURCES=Firefly III (bank balances), Open Wearables (sleep, steps)   # optional: what else to look at
+   ```
+4. In Pippin, edit a goal → **Let your assistant tick this** → write a yes/no question. It's checked about once an
+   hour (`AGENT_CHECK_EVERY_MIN`), or straight away with **Check now**.
+
+The coach conversation itself stays on the model you chose in [Choosing an AI](#choosing-an-ai). The agent is only
+asked for plans and for goal checks, and Pippin stores just its short answer, encrypted.
+
 ## HTTPS and installing on your phone
 Installing as an app, notifications and the microphone all need **HTTPS**. Plain `http://localhost` works on the
 computer running Pippin, but not from your phone. The easiest options:
@@ -218,7 +268,9 @@ Everything is in [`.env.example`](.env.example), with comments. Beyond the AI se
 | `CRISIS_RESOURCES_JSON` | Crisis lines for your country (defaults are UK) |
 | `CHAT_WEB=true` + `SEARXNG_URL` | Lets everyday chat search the web through your [SearXNG](https://docs.searxng.org/). The coach never does |
 | `WHISPER_URL`, `TTS_URL` | Local voice in and out (any OpenAI-compatible speech server) |
-| `BRAIN=hermes` | "Plan my day" from your real calendar and email via [Hermes Agent](https://github.com/NousResearch/hermes-agent) |
+| `BRAIN=hermes` / `agent` | Connect your agent: plans from your real calendar and email, and goals it can tick ([guide](docs/AGENT.md)) |
+| `AGENT_SOURCES` | Extra things the agent should look at when planning, e.g. your bank or wearable data |
+| `AGENT_CHECK_EVERY_MIN` | How often agent-linked goals are checked (default 60) |
 | `VAULT_HOST_DIR` | An Obsidian folder for notes you approve |
 | `VOICE_NOTES_HOST_DIR` | A folder of transcribed voice notes to sort into reminders, memories and journal |
 
@@ -231,7 +283,7 @@ The design is grounded in published research. The reports and their sources are 
 [docs/research](docs/research/reports/).
 
 ## Status
-Version 0.8 is the first public release, by one person. Everything listed works, but read
+Version 0.9 is an early public release, by one person. Everything listed works, but read
 [docs/KNOWN_ISSUES.md](docs/KNOWN_ISSUES.md) before relying on it, and see the [roadmap](ROADMAP.md) and
 [changelog](CHANGELOG.md).
 

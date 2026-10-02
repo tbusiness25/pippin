@@ -2,6 +2,17 @@
 
 All notable changes. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), versions: [SemVer](https://semver.org/).
 
+## [0.9.0] — 2026-10-02
+### Added
+- **Agent-linked goals**: a goal can carry a yes/no question your own agent checks with its tools (bank, email,
+  calendar, wearables…) about once an hour or on demand; true → ticked with energy, not yet → silent
+- `BRAIN=agent` for any agent with an OpenAI-compatible API; `AGENT_SOURCES` to widen "plan my day"
+- One-setting AI providers: `AI_PROVIDER` = ollama, openai, anthropic, openrouter, gemini or custom
+- `scripts/setup.sh`; install guides for Docker, WSL 2 and Linux without Docker; docs/AGENT.md
+
+### Fixed
+- "+ New" button overlapping the intro text on Habits and Chat
+
 ## [0.8.0] — 2026-10-02 — first public release
 ### Added
 - General AI chat with separate conversations and optional web search (SearXNG) with sources

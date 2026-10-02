@@ -552,35 +552,53 @@ window.APP = window.APP || (window.__BUILD__ && window.__BUILD__.appName) || "Ap
   // ---------- goals ----------
   async function renderGoals() {
     setTab('goals');
-    const { goals, categories, suggestions } = await api('/api/goals');
+    const { goals, categories, suggestions, agentChecks } = await api('/api/goals');
     const daysLabel = (g) => g.once_on ? `just ${g.once_on}` : g.days.length === 7 ? 'every day' : g.days.length ? g.days.map((d) => DAY_NAMES[d]).join(' ') : 'no days';
     $app.innerHTML = `
       <div class="card"><div class="row"><h2 class="grow">Your goals</h2><button class="btn" id="add">+ New</button></div>
         ${goals.length ? goals.map((g) => `<div class="goal" data-id="${g.id}"><div class="grow"><div class="cat">${CAT_EMOJI[g.category] || '🌿'} ${esc(g.category)}</div>
-          <div class="gtitle">${esc(g.title)}</div><div class="gmeta">${daysLabel(g)}</div></div><button class="btn ghost" data-edit="${g.id}">Edit</button></div>`).join('') : '<p class="muted">No goals yet. Start with one from the ideas below.</p>'}</div>
+          <div class="gtitle">${esc(g.title)}</div><div class="gmeta">${daysLabel(g)}</div>${g.agent_check ? agentLine(g, agentChecks) : ''}</div><button class="btn ghost" data-edit="${g.id}">Edit</button></div>`).join('') : '<p class="muted">No goals yet. Start with one from the ideas below.</p>'}</div>
       <div class="card"><h2>Ideas</h2><p class="small muted">Tap one to add it for every day. Small is the point.</p>
         ${Object.entries(suggestions).map(([cat, list]) => `<h3 style="margin-top:12px">${CAT_EMOJI[cat]} ${esc(cat)}</h3><div class="row wrap">${list.map((t) => `<button class="chip" data-sug="${esc(t)}" data-cat="${cat}">${esc(t)}</button>`).join('')}</div>`).join('')}</div>`;
-    document.getElementById('add').onclick = () => goalSheet(null, categories);
-    $app.querySelectorAll('[data-edit]').forEach((b) => b.onclick = () => goalSheet(goals.find((g) => g.id === b.dataset.edit), categories));
+    document.getElementById('add').onclick = () => goalSheet(null, categories, agentChecks);
+    $app.querySelectorAll('[data-edit]').forEach((b) => b.onclick = () => goalSheet(goals.find((g) => g.id === b.dataset.edit), categories, agentChecks));
+    $app.querySelectorAll('[data-check]').forEach((b) => b.onclick = async () => {
+      try { await api(`/api/goals/${b.dataset.check}/check`, { body: {} }); b.textContent = 'Checking… (can take a minute)'; b.disabled = true; setTimeout(renderGoals, 45000); }
+      catch (e) { toast(e.message); }
+    });
     $app.querySelectorAll('[data-sug]').forEach((b) => b.onclick = async () => {
       try { await api('/api/goals', { body: { title: b.dataset.sug, category: b.dataset.cat, source: 'suggestion' } }); toast('Added'); renderGoals(); state = await api('/api/pet/state'); }
       catch (e) { toast(e.message); }
     });
   }
 
-  function goalSheet(g, categories) {
+  // A linked goal's status: who checks it, and what the agent last found. "Not yet" is neutral, never red.
+  function agentLine(g, on) {
+    const c = g.last_check;
+    const when = c ? new Date(c.checked_at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) : '';
+    const status = !c ? 'not checked yet today' : c.met === true ? `✅ done (${when})` : c.met === false ? `not yet (${when})` : `couldn’t check (${when})`;
+    return `<div class="small muted" style="margin-top:4px">🔗 Your assistant checks this · ${status}${c?.evidence ? ` — ${esc(c.evidence)}` : ''}</div>
+      ${on ? `<button class="btn ghost small" data-check="${g.id}" style="padding-left:0">Check now</button>` : '<div class="small muted">No agent connected, so this won’t be checked.</div>'}`;
+  }
+
+  function goalSheet(g, categories, agentChecks) {
     const days = new Set(g ? g.days : [0, 1, 2, 3, 4, 5, 6]);
     sheet(`<h1>${g ? 'Edit goal' : 'New goal'}</h1>
       <div class="field"><label for="gt">What’s the small thing?</label><input id="gt" maxlength="80" value="${esc(g?.title || '')}" placeholder="e.g. Take my meds"></div>
       <div class="field"><label for="gc">Kind</label><select id="gc">${categories.map((c) => `<option ${g?.category === c ? 'selected' : ''} value="${c}">${CAT_EMOJI[c]} ${c}</option>`).join('')}</select></div>
       <div class="field"><label>Which days?</label><div class="row">${DAYS.map((d, i) => `<button class="chip ${days.has(i) ? 'on' : ''}" data-d="${i}" aria-label="${DAY_NAMES[i]}">${d}</button>`).join('')}</div></div>
       <div class="field"><label for="gs">Tiny steps (one per line, optional)</label><textarea id="gs" placeholder="Fill the glass\nDrink it">${esc((g?.steps || []).map((s) => s.text).join('\n'))}</textarea></div>
+      ${agentChecks || g?.agent_check ? `<details class="field" ${g?.agent_check ? 'open' : ''}><summary><b>🔗 Let your assistant tick this</b> <span class="small muted">(optional)</span></summary>
+        <p class="small muted">Ask a yes/no question your agent can answer with the tools you’ve given it. It checks about once an hour and ticks the goal when it’s true. “Not yet” is never shown as a fail.</p>
+        <textarea id="gq" maxlength="300" placeholder="e.g. Is my current account above £200?\nHave I replied to every email in my inbox older than 2 days?\nDid I sleep at least 7 hours last night?\nHave I done 6,000 steps today?">${esc(g?.agent_check || '')}</textarea>
+        <label for="ga" class="small" style="display:block;margin-top:8px">Don’t check before (optional)</label><input id="ga" type="time" value="${esc(g?.agent_check_after || '')}" style="max-width:140px"></details>` : ''}
       <button class="btn block" id="save">Save</button>
       ${g ? '<button class="btn ghost block" id="del">Remove this goal</button>' : ''}`, (s, close) => {
       s.querySelectorAll('[data-d]').forEach((b) => b.onclick = () => { const d = +b.dataset.d; days.has(d) ? days.delete(d) : days.add(d); b.classList.toggle('on'); });
       s.querySelector('#save').onclick = async () => {
         const body = { title: s.querySelector('#gt').value, category: s.querySelector('#gc').value, days: [...days].sort(),
           once_on: g?.once_on || null,
+          agent_check: s.querySelector('#gq')?.value.trim() || null, agent_check_after: s.querySelector('#ga')?.value || null,
           steps: s.querySelector('#gs').value.split('\n').map((t) => t.trim()).filter(Boolean).map((text) => ({ text, done: false })) };
         try { await api(g ? `/api/goals/${g.id}` : '/api/goals', { method: g ? 'PUT' : 'POST', body }); close(); route(); }
         catch (e) { toast(e.message); }

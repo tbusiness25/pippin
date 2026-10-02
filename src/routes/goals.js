@@ -3,6 +3,8 @@ const { pool } = require('../db');
 const game = require('../game');
 const { CATEGORIES } = require('../brains/prompts');
 const rewards = require('../rewards');
+const { completeGoal } = require('../goalDone');
+const checks = require('../agentChecks');
 
 const router = express.Router();
 
@@ -24,24 +26,28 @@ const clean = (b) => ({
   category: CATEGORIES.includes(b.category) ? b.category : 'general',
   days: Array.isArray(b.days) ? b.days.map(Number).filter((d) => d >= 0 && d <= 6) : [0, 1, 2, 3, 4, 5, 6],
   once_on: b.once_on || null,
+  agent_check: b.agent_check ? String(b.agent_check).trim().slice(0, 300) || null : null,
+  agent_check_after: /^\d{1,2}:\d{2}$/.test(b.agent_check_after || '') ? b.agent_check_after : null,
   steps: Array.isArray(b.steps) ? b.steps.slice(0, 8).map((s) => ({ text: String(s.text ?? s).slice(0, 120), done: !!s.done })) : [],
 });
 
 router.get('/', async (req, res) => {
   const { rows } = await pool.query(
-    `SELECT id, title, category, days, once_on, steps, why, source FROM goals
-     WHERE user_id=$1 AND deleted_at IS NULL ORDER BY sort, created_at`, [req.uid]);
-  res.json({ ok: true, goals: rows, categories: CATEGORIES, suggestions: SUGGESTIONS });
+    `SELECT id, title, category, days, once_on, steps, why, source, agent_check, to_char(agent_check_after, 'HH24:MI') AS agent_check_after
+     FROM goals WHERE user_id=$1 AND deleted_at IS NULL ORDER BY sort, created_at`, [req.uid]);
+  const last = await checks.lastChecks(req.uid);
+  for (const g of rows) g.last_check = last[g.id] || null;
+  res.json({ ok: true, goals: rows, categories: CATEGORIES, suggestions: SUGGESTIONS, agentChecks: checks.available() });
 });
 
 router.post('/', async (req, res) => {
   const g = clean(req.body || {});
   if (!g.title) return res.status(400).json({ ok: false, error: 'Give the goal a name' });
   const { rows } = await pool.query(
-    `INSERT INTO goals(user_id, title, category, days, once_on, steps, why, source)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING id`,
+    `INSERT INTO goals(user_id, title, category, days, once_on, steps, why, source, agent_check, agent_check_after)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING id`,
     [req.uid, g.title, g.category, g.days, g.once_on, JSON.stringify(g.steps),
-      req.body.why || null, ['coach', 'suggestion'].includes(req.body.source) ? req.body.source : 'manual']);
+      req.body.why || null, ['coach', 'suggestion'].includes(req.body.source) ? req.body.source : 'manual', g.agent_check, g.agent_check_after]);
   res.json({ ok: true, id: rows[0].id });
 });
 
@@ -49,9 +55,9 @@ router.put('/:id', async (req, res) => {
   const g = clean(req.body || {});
   if (!g.title) return res.status(400).json({ ok: false, error: 'Give the goal a name' });
   await pool.query(
-    `UPDATE goals SET title=$3, category=$4, days=$5, once_on=$6, steps=$7
+    `UPDATE goals SET title=$3, category=$4, days=$5, once_on=$6, steps=$7, agent_check=$8, agent_check_after=$9
      WHERE id=$1 AND user_id=$2 AND deleted_at IS NULL`,
-    [req.params.id, req.uid, g.title, g.category, g.days, g.once_on, JSON.stringify(g.steps)]);
+    [req.params.id, req.uid, g.title, g.category, g.days, g.once_on, JSON.stringify(g.steps), g.agent_check, g.agent_check_after]);
   res.json({ ok: true });
 });
 
@@ -78,14 +84,17 @@ router.post('/:id/complete', async (req, res) => {
   const day = game.localDay(user.tz);
   const { rows: g } = await pool.query('SELECT id FROM goals WHERE id=$1 AND user_id=$2 AND deleted_at IS NULL', [req.params.id, req.uid]);
   if (!g.length) return res.status(404).json({ ok: false });
-  const { rows } = await pool.query(
-    `INSERT INTO goal_completions(goal_id, user_id, day) VALUES ($1,$2,$3)
-     ON CONFLICT (goal_id, day) DO UPDATE SET undone=false RETURNING (xmax = 0) AS inserted`,
-    [req.params.id, req.uid, day]);
-  const first = rows[0].inserted;
-  const energy = first ? await game.addEnergy(req.uid, game.ENERGY.goal, 'goal') : null;
-  const messages = first ? await rewards.onGoalCompleted(req.uid, req.params.id, day) : [];
+  const { energy, messages } = await completeGoal(req.uid, req.params.id, day);
   res.json({ ok: true, energy, messages });
+});
+
+// Ask the agent now (runs in the background; the screen refreshes from GET /).
+router.post('/:id/check', async (req, res) => {
+  if (!checks.available()) return res.status(400).json({ ok: false, error: 'No agent connected (BRAIN=hermes or BRAIN=agent)' });
+  const { rows } = await pool.query('SELECT id FROM goals WHERE id=$1 AND user_id=$2 AND agent_check IS NOT NULL AND deleted_at IS NULL', [req.params.id, req.uid]);
+  if (!rows.length) return res.status(404).json({ ok: false });
+  checks.checkNow(req.uid, req.params.id);
+  res.json({ ok: true, pending: true });
 });
 
 router.post('/:id/uncomplete', async (req, res) => {

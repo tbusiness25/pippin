@@ -2,6 +2,7 @@
  * Brain selection. Pippin talks to exactly one interface:
  *   { name, label, capabilities, chat(history), planDay(ctx), story(ctx) }
  * BRAIN=hermes  → Hermes Agent (calendar/email/tasks via its own tools)
+ * BRAIN=agent   → any agent with an OpenAI-compatible API (AGENT_API_URL / AGENT_API_KEY / AGENT_MODEL)
  * BRAIN=openai  → any OpenAI-compatible model (in-app context only)
  * STORY_* optionally points adventure stories at a small fast model; otherwise the main brain writes them.
  * If no brain is configured, Pippin still works: stories come from built-in templates.
@@ -40,6 +41,10 @@ function createBrain(env) {
   }
 
   const kind = (env.BRAIN || '').toLowerCase();
+  if (kind === 'agent' && env.AGENT_API_URL) {
+    return createHermesBrain({ ...env, HERMES_API_URL: env.AGENT_API_URL, HERMES_API_KEY: env.AGENT_API_KEY,
+      HERMES_MODEL: env.AGENT_MODEL || 'agent', HERMES_CONTEXT_HINT: env.AGENT_CONTEXT_HINT || env.HERMES_CONTEXT_HINT }, story, 'Your agent');
+  }
   if (kind === 'hermes' && env.HERMES_API_URL) return createHermesBrain(env, story);
   if (kind === 'openai' && env.OPENAI_BASE_URL && env.OPENAI_MODEL) {
     const b = createOpenAIBrain(env);

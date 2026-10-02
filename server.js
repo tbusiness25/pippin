@@ -99,6 +99,7 @@ initDb()
     engine.purge().catch(() => {});
     setInterval(() => engine.purge().catch(() => {}), 6 * 3600 * 1000);
     require('./src/voice/ingest').start();
+    require('./src/agentChecks').start(brain);
   })
   .then(() => app.listen(PORT, () => console.log(`[pippin] ${APP_VERSION} listening on :${PORT}`)))
   .catch((e) => { console.error('[fatal]', e); process.exit(1); });

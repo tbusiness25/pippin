@@ -5,6 +5,15 @@ features use any OpenAI-compatible model you point them at (ideally a local one,
 
 ✅ = working · 🧪 = working but experimental · 🔌 = optional integration
 
+## Your agent (optional)
+- ✅ Connect your own agent ([Hermes Agent](https://github.com/NousResearch/hermes-agent), or any agent with an OpenAI-compatible API) — see [docs/AGENT.md](docs/AGENT.md)
+- ✅ **Agent-linked goals**: write a yes/no question ("Is my current account above £200?", "Did I sleep 7 hours?",
+  "Have I replied to emails older than 2 days?"); the agent checks it with the tools you gave it and ticks the goal
+- ✅ "Not yet" is silent and neutral; only good news is notified; answers stored encrypted
+- ✅ "Plan my day" from your real calendar, inbox, task board and any extra sources you name (bank, wearables…)
+- 🔌 Works with whatever the agent can reach: Gmail/Calendar, finance APIs (e.g. Firefly III), wearables via
+  [Open Wearables](https://github.com/the-momentum/open-wearables) (Garmin, Oura, Whoop, Apple Health, Fitbit…)
+
 ## The companion
 - ✅ Hatch a small moss creature (a *sprig*) and name it; 5 growth stages, colours and outfits
 - ✅ Small self-care goals (water, meds, eat, step outside, reply to that email…) give it energy
