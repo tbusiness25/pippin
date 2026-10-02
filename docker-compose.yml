@@ -1,0 +1,78 @@
+# Pippin — app + its own Postgres (+ optional WhatsApp link). Copy .env.example to .env first.
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: ${CONTAINER_PREFIX:-pippin}-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME:-pippin}
+      POSTGRES_USER: ${DB_USER:-pippin}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "127.0.0.1:${DB_HOST_PORT:-5446}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-pippin} -d ${DB_NAME:-pippin}"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+
+  app:
+    build:
+      context: .
+      args:
+        SW_VERSION: ${SW_VERSION:-dev}
+    image: pippin:latest
+    container_name: ${CONTAINER_PREFIX:-pippin}-app
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DB_HOST: db
+      DB_PORT: "5432"
+    ports:
+      - "${APP_BIND:-127.0.0.1}:${APP_HOST_PORT:-8910}:8080"   # put HTTPS (a reverse proxy) in front
+    user: "${APP_UID:-1000}:${APP_GID:-1000}"   # files written to your vault stay yours
+    volumes:
+      - ./public:/app/public   # frontend served live; bump SW_VERSION after edits
+      # Optional Obsidian folder: the app writes ONLY here, and only what you approve.
+      - ${VAULT_HOST_DIR:-./vault}:/vault
+      # Optional voice-note folder — READ-ONLY. Important audio is copied into ./data.
+      - ${VOICE_NOTES_HOST_DIR:-./voice-notes}:/voice-notes:ro
+      - ./data:/data
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - default
+      - extra
+
+  # Optional live WhatsApp link — contact metadata only. Off unless COMPOSE_PROFILES=whatsapp.
+  # Uses an unofficial library: see docs/KNOWN_ISSUES.md (B8). The export importer is the safer route.
+  whatsapp:
+    profiles: [whatsapp]
+    build: ./whatsapp
+    image: pippin-whatsapp:latest
+    container_name: ${CONTAINER_PREFIX:-pippin}-whatsapp
+    restart: unless-stopped
+    environment:
+      WHATSAPP_SIDECAR_SECRET: ${WHATSAPP_SIDECAR_SECRET}
+      APP_INTERNAL_URL: http://app:8080/internal
+      APP_NAME: ${APP_NAME:-}
+    volumes:
+      - wadata:/data
+    # no published ports: only the app can reach its control API
+
+volumes:
+  pgdata:
+    name: ${PGDATA_VOLUME:-pippin-pgdata}
+  wadata:
+    name: ${WADATA_VOLUME:-pippin-wa-data}
+
+networks:
+  # Optional: join an existing Docker network (e.g. your reverse proxy's). Leave unset for a private one.
+  extra:
+    name: ${EXTRA_NETWORK:-pippin-extra}
+    external: ${EXTRA_NETWORK_EXTERNAL:-false}

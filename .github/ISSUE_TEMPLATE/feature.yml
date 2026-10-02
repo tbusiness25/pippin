@@ -1,0 +1,18 @@
+name: Feature idea
+description: Suggest something new
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes: { label: What's hard right now?, description: "The problem, in your own words — the solution can come later." }
+    validations: { required: true }
+  - type: textarea
+    id: idea
+    attributes: { label: Your idea }
+  - type: checkboxes
+    id: principles
+    attributes:
+      label: Fits the principles
+      options:
+        - label: It doesn't punish absence (no decay, lost progress or guilt)
+        - label: It doesn't send personal data anywhere by default

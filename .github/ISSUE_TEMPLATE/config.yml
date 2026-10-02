@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: "If you're struggling right now"
+    url: https://findahelpline.com
+    about: "This repo isn't a support service. UK: Samaritans 116 123, text SHOUT to 85258, emergency 999."
+  - name: Security vulnerability
+    url: ../../security/advisories/new
+    about: Please report security problems privately.

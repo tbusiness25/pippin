@@ -1,0 +1,17 @@
+name: Safety concern (AI or wellbeing)
+description: The coach said something harmful, missed a risk, or health information looks wrong
+labels: [safety]
+body:
+  - type: markdown
+    attributes:
+      value: "Thank you — these get priority. **Paraphrase; don't paste real conversations.** If you're in crisis, see the links on the previous page."
+  - type: textarea
+    id: what
+    attributes: { label: What happened?, description: "A made-up message that reproduces it is ideal." }
+    validations: { required: true }
+  - type: input
+    id: model
+    attributes: { label: Model and endpoint, placeholder: "e.g. llama3.1:8b on Ollama" }
+  - type: textarea
+    id: source
+    attributes: { label: Source, description: "If health info is wrong: the guideline/paper that says otherwise (NICE, NHS, CMO…)" }

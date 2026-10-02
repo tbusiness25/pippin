@@ -1,0 +1,16 @@
+{
+  "name": "pippin-whatsapp",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Pippin live WhatsApp link — contact METADATA only (who, when, direction). Message text is never read or stored.",
+  "dependencies": {
+    "@whiskeysockets/baileys": "7.0.0-rc13",
+    "pino": "^9.0.0",
+    "qrcode": "^1.5.4"
+  },
+  "overrides": {
+    "protobufjs": "^7.5.5"
+  },
+  "license": "AGPL-3.0-or-later"
+}
