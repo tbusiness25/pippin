@@ -2,6 +2,15 @@
 
 All notable changes. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), versions: [SemVer](https://semver.org/).
 
+## [0.10.0] — 2026-10-05
+### Added
+- **Fitness add-on** (`COMPOSE_PROFILES=fitness`): SparkyFitness runs headless inside the stack, with Pippin's own
+  screens — **Watch** (Garmin sleep, HRV, stress, Body Battery, heart rate, BP, steps, readiness, VO₂ max… and
+  30-day trends), **Food** (diary, search, quick add, meal plans, hide-the-numbers) and **Workouts** (sets, routines,
+  history). Per-person backend accounts are created automatically; nothing is exposed outside the stack
+- Voice notes: file each note into a category folder and back up every recording's audio
+- Setup script asks about the fitness add-on
+
 ## [0.9.0] — 2026-10-02
 ### Added
 - **Agent-linked goals**: a goal can carry a yes/no question your own agent checks with its tools (bank, email,

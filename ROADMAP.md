@@ -10,6 +10,9 @@ No dates — this is a spare-time project. Ordered by what matters most.
 - [ ] Country packs for helplines (crisis, alcohol, drugs, gambling) beyond the UK
 
 ## Next
+- [ ] Watch screen for other wearables SparkyFitness already syncs (Fitbit, Oura, Polar, Withings…)
+- [ ] Goals that tick themselves from your watch ("7 hours' sleep", "6,000 steps") without needing an agent
+- [ ] Barcode scanning for food
 - [ ] Translations
 - [ ] Calendar (CalDAV/ICS) read-only for the morning plan without needing an agent
 - [ ] Better offline conflict handling

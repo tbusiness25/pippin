@@ -66,11 +66,25 @@ features use any OpenAI-compatible model you point them at (ideally a local one,
   year calendar, milestones
 - ✅ UK helplines by default (configurable)
 
+## Fitness (optional add-on)
+- ✅ **Watch**: everything your Garmin shows — sleep (time, score, deep/light/REM/awake), overnight HRV, resting and
+  intraday heart rate, stress, Body Battery, steps and distance, blood pressure, SpO₂, breathing rate, training
+  readiness, recovery time, intensity minutes, calories, VO₂ max and fitness age, floors — plus 30-day trends
+- ✅ Garmin sync every hour (sign in once; 2-step codes supported)
+- ✅ **Food**: diary by meal, search Open Food Facts or your own foods, quick add (name + calories), daily guide with
+  protein/carbs/fat, and a **hide the numbers** switch for anyone who does better without calories
+- ✅ **Meal plans**: plan a week of meals once and have them added to your diary
+- ✅ **Workouts**: log exercises with sets × reps × kg or minutes, search 800+ exercises, save routines and log the
+  whole thing in one tap; Garmin activities appear automatically
+- 🔌 Runs [SparkyFitness](https://github.com/CodeWithCJ/SparkyFitness) headless inside the stack; each person gets
+  their own account automatically
+
 ## Chat and recordings
 - ✅ General AI chat in separate conversations, auto-titled
 - 🔌 Optional web search (SearXNG) with sources shown; page reader blocks private/internal addresses
 - 🔌 Voice-note routing: a folder of transcribed recordings is sorted into reminders, work to-dos, memories,
   journal or kids' recordings; important audio is kept permanently
+- 🔌 Optionally files every note into a folder per category (Kids/, Memories/, Journal/, Reminders/, Work/, Other/) and backs up every recording's audio
 
 ## Sharing with your GP or therapist
 - ✅ PDF report: you choose the period and sections (mood, questionnaires, sobriety, habits, notes)

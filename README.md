@@ -36,6 +36,9 @@ you were away. Around it:
   days*, which never goes down. A slip opens a short debrief, not a reset.
 - **Monthly GAD-7 / PHQ-9 / WHO-5** with trends, and a **PDF to share with your GP or therapist**.
 - **Everyday AI chat** with optional web search, kept separate from the coach.
+- **Fitness (optional):** everything your **Garmin** shows (sleep stages, HRV, stress, Body Battery, heart rate,
+  blood pressure, steps, readiness, VO₂ max) with 30-day trends, plus a **food diary with meal plans** and a
+  **workout log with saved routines**. Numbers can be hidden for anyone who does better without them.
 
 It runs on your server, works offline, and installs as an app on Android, iPhone and desktop.
 
@@ -51,6 +54,12 @@ It runs on your server, works offline, and installs as an app on Android, iPhone
   <img src="docs/screenshots/chat.png" width="200" alt="Everyday chat: quick dinner ideas">
   <img src="docs/screenshots/me.png" width="200" alt="Settings: optional streaks, pause, goals, shop, adventures, insights">
 </p>
+<p align="center">
+  <img src="docs/screenshots/watch.png" width="200" alt="Watch: sleep stages and score, steps, Body Battery, stress and heart rate from Garmin">
+  <img src="docs/screenshots/watch-trends.png" width="200" alt="30-day trends: steps, sleep, HRV, resting heart rate, stress, blood pressure">
+  <img src="docs/screenshots/food.png" width="200" alt="Food diary with a daily guide and protein, carbs and fat">
+  <img src="docs/screenshots/workouts.png" width="200" alt="Workouts: sets and weights, saved routines logged in one tap">
+</p>
 <p align="center"><sub>Screenshots use a demo account with made-up data.</sub></p>
 
 > **Not therapy, not a medical device.** Pippin is a self-help wellbeing tool for adults. Questionnaires are
@@ -58,7 +67,7 @@ It runs on your server, works offline, and installs as an app on Android, iPhone
 > 116 123 · text SHOUT to 85258 · emergency 999. Elsewhere: [findahelpline.com](https://findahelpline.com).
 
 **Contents:** [Why](#why-another-adhd-app) · [Features](#features) · [Install](#install) · [Choosing an AI](#choosing-an-ai)
-· [Connecting your agent](#connecting-your-agent) · [HTTPS and your phone](#https-and-installing-on-your-phone)
+· [Connecting your agent](#connecting-your-agent) · [Fitness](#fitness-garmin-food-and-workouts) · [HTTPS and your phone](#https-and-installing-on-your-phone)
 · [Updating and backups](#updating-and-backups) · [Configuration](#configuration) · [Safety and privacy](#safety-and-privacy)
 
 ## Why another ADHD app?
@@ -89,6 +98,7 @@ The short version. The full list is in [FEATURES.md](FEATURES.md).
 | 🔁 **Habits** | "After I…, I will…" habits; X days a week; habit strength (Loop formula); Done / Mini / Rest day from the notification; max 3 building at once |
 | 🌊 **Quitting** | 22 categories; total free days that never go down; lapse debrief; urge surfing; event plans; money and units saved; per-substance safety rules and UK helplines |
 | 📋 **Check-ins for your GP** | Monthly GAD-7, PHQ-9 and WHO-5 with trends; a PDF report where you choose the period and sections |
+| ⌚ **Fitness** (optional) | Garmin sleep, HRV, stress, Body Battery, heart rate, BP, steps, readiness, VO₂ max with 30-day trends; food diary, Open Food Facts search, quick add, meal plans, hide-the-numbers; workouts with sets and saved routines |
 | 🧘 **Tools** | Breathing, generated ambient sounds, focus timer with your sprig as a body double, stretches, reflections, multi-day journeys |
 | ✨ **Chat** | Separate everyday conversations, optional web search with sources |
 | 👪 **Household** | Several people on one server, each private; friends see your sprig and shared goals, never your check-ins |
@@ -228,6 +238,32 @@ wearables, is [docs/AGENT.md](docs/AGENT.md). In short:
 The coach conversation itself stays on the model you chose in [Choosing an AI](#choosing-an-ai). The agent is only
 asked for plans and for goal checks, and Pippin stores just its short answer, encrypted.
 
+## Fitness: Garmin, food and workouts
+Optional. It runs [SparkyFitness](https://github.com/CodeWithCJ/SparkyFitness) headless inside the stack: its
+database and server are only reachable from Pippin, and Pippin has its own screens for it (*Explore → Watch / Food
+/ Workouts*). Each person on your Pippin gets their own fitness account automatically. It adds about 600 MB of RAM.
+
+**Turn it on:** answer "y" in `./scripts/setup.sh`, or add this to `.env` and run `docker compose up -d`:
+```ini
+COMPOSE_PROFILES=fitness
+SPARKY_URL=http://sparky-server:3010
+SPARKY_DB_PASSWORD=...         # openssl rand -hex 24
+SPARKY_APP_DB_PASSWORD=...     # openssl rand -hex 24
+SPARKY_ENCRYPTION_KEY=...      # openssl rand -hex 32
+SPARKY_AUTH_SECRET=...         # openssl rand -hex 32
+```
+**Connect Garmin:** *Explore → Watch* → sign in with your Garmin Connect email and password (and the code Garmin
+sends, if you use 2-step verification). The last 30 days come in straight away, then it syncs every hour. Your
+password isn't stored; only Garmin's sign-in token is, encrypted. This uses an unofficial Garmin connection, the
+same one SparkyFitness and many home projects use, so Garmin may occasionally ask you to sign in again. Garmin's
+official API is only open to approved businesses.
+
+**Other watches:** SparkyFitness can also sync Fitbit, Oura, Polar, Strava, Withings and others. Pippin's Watch
+screen currently connects Garmin; others are on the [roadmap](ROADMAP.md).
+
+**Agent-linked goals:** your agent can't see this data unless you give it access. The simplest way is to add
+SparkyFitness' MCP endpoint (`/mcp`, with an API key) to your agent.
+
 ## HTTPS and installing on your phone
 Installing as an app, notifications and the microphone all need **HTTPS**. Plain `http://localhost` works on the
 computer running Pippin, but not from your phone. The easiest options:
@@ -274,6 +310,8 @@ Everything is in [`.env.example`](.env.example), with comments. Beyond the AI se
 | `AGENT_CHECK_EVERY_MIN` | How often agent-linked goals are checked (default 60) |
 | `VAULT_HOST_DIR` | An Obsidian folder for notes you approve |
 | `VOICE_NOTES_HOST_DIR` | A folder of transcribed voice notes to sort into reminders, memories and journal |
+| `VOICE_FILE_INTO_FOLDERS`, `VOICE_KEEP_ALL_AUDIO` | File each note into a folder per category, and back up every recording's audio |
+| `COMPOSE_PROFILES=fitness` | The fitness add-on: Garmin, food diary, meal plans and workouts ([above](#fitness-garmin-food-and-workouts)) |
 
 ## Safety and privacy
 - [docs/SAFETY.md](docs/SAFETY.md): intended purpose, hazard log, red-team suite and regulatory position
@@ -284,7 +322,7 @@ The design is grounded in published research. The reports and their sources are 
 [docs/research](docs/research/reports/).
 
 ## Status
-Version 0.9 is an early public release, by one person. Everything listed works, but read
+Version 0.10 is an early public release, by one person. Everything listed works, but read
 [docs/KNOWN_ISSUES.md](docs/KNOWN_ISSUES.md) before relying on it, and see the [roadmap](ROADMAP.md) and
 [changelog](CHANGELOG.md).
 

@@ -38,4 +38,8 @@ The live list is in GitHub Issues — this file is the snapshot at release, so n
 | B9 | No automated unit/integration tests yet — only the safety red-team script |
 | B10 | Accessibility hasn't been audited (screen readers, contrast, reduced motion) |
 | B13 | Agent-linked goals depend on the agent: answers can be wrong, slow (minutes) or fail; each check is a full agent run, so cloud-model agents cost money per check | 
+| B14 | Garmin sync uses an unofficial connection (the same one as SparkyFitness and many home projects). Garmin can change it without notice, and may ask you to sign in again |
+| B15 | A Garmin 2-step code must be entered before the fitness backend restarts — the half-finished sign-in is held in memory |
+| B16 | Garmin's own food log (if you use it) syncs into the Food diary and can duplicate meals you also log in Pippin |
+| B17 | Fitness screens are new: no offline queue for food/workout logging yet (needs a connection) |
 | B11 | `BRAIN=hermes` (calendar/email planning) needs a separately-run Hermes Agent and takes 1–3 minutes |

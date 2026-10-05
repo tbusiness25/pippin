@@ -35,6 +35,7 @@ fi
 docker_mode=$(ask "Run with Docker? (Y/n)" Y)
 if [[ "$provider" == custom ]]; then base=$(ask "Server address (ending in /v1)" "http://localhost:8080/v1"); fi
 if [[ "$provider" == ollama && ! "$docker_mode" =~ ^[Yy] ]]; then base="http://localhost:11434/v1"; fi
+fitness=$(ask "Turn on food, workouts and Garmin (fitness add-on, ~600 MB RAM)? (y/N)" N)
 tz=$(ask "Your time zone" "$(cat /etc/timezone 2>/dev/null || echo Europe/London)")
 setup_code=$(rand 4)
 
@@ -50,6 +51,11 @@ sed -e "s|^JWT_SECRET=.*|JWT_SECRET=$(rand)|" \
 [[ -n "$base" ]] && sed -i.tmp "s|^# AI_BASE_URL=.*|AI_BASE_URL=$base|" .env
 if [[ ! "$docker_mode" =~ ^[Yy] ]]; then
   sed -i.tmp -e "s|^# DB_HOST=.*|DB_HOST=localhost|" -e "s|^# DB_PORT=.*|DB_PORT=5432|" .env
+fi
+if [[ "$fitness" =~ ^[Yy] ]]; then
+  sed -i.tmp -e "s|^# COMPOSE_PROFILES=fitness .*|COMPOSE_PROFILES=fitness|" -e "s|^# SPARKY_URL=.*|SPARKY_URL=http://sparky-server:3010|" \
+    -e "s|^# SPARKY_DB_PASSWORD=.*|SPARKY_DB_PASSWORD=$(rand 24)|" -e "s|^# SPARKY_APP_DB_PASSWORD=.*|SPARKY_APP_DB_PASSWORD=$(rand 24)|" \
+    -e "s|^# SPARKY_ENCRYPTION_KEY=.*|SPARKY_ENCRYPTION_KEY=$(rand)|" -e "s|^# SPARKY_AUTH_SECRET=.*|SPARKY_AUTH_SECRET=$(rand)|" .env
 fi
 rm -f .env.tmp
 chmod 600 .env

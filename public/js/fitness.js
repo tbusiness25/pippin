@@ -18,7 +18,8 @@
     if (pts.length < 2) return '<div class="small muted">Not enough data yet</div>';
     const min = Math.min(...pts), max = Math.max(...pts), w = 300, span = max - min || 1;
     const xy = v.map((x, i) => x == null ? null : [(i / (v.length - 1)) * w, h - 4 - ((x - min) / span) * (h - 8)]);
-    const d = xy.reduce((a, p, i) => p ? `${a}${a && xy[i - 1] ? 'L' : 'M'}${p[0].toFixed(1)},${p[1].toFixed(1)}` : a, '');
+    // Join across missing days (e.g. a blood-pressure reading every few days) rather than leaving gaps.
+    const d = xy.filter(Boolean).map((p, i) => `${i ? 'L' : 'M'}${p[0].toFixed(1)},${p[1].toFixed(1)}`).join('');
     const first = xy.find(Boolean), last = [...xy].reverse().find(Boolean);
     return `<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" style="width:100%;height:${h}px;display:block" aria-hidden="true">
       ${fill ? `<path d="${d}L${last[0]},${h}L${first[0]},${h}Z" fill="${color}" opacity=".12"/>` : ''}<path d="${d}" fill="none" stroke="${color}" stroke-width="2" vector-effect="non-scaling-stroke"/></svg>`;
@@ -123,7 +124,7 @@
       <div style="height:6px;background:var(--line);border-radius:3px"><div style="height:6px;width:${Math.min(100, goal ? (v / goal) * 100 : 0)}%;background:${color};border-radius:3px"></div></div></div>`;
     const plans = await api('/api/fitness/plans').then((r) => r.plans || []).catch(() => []);
     const showNums = numbersOn();
-    const k = (e) => (showNums ? `${kcal(e)} kcal` : '');
+    const kcalText = (e) => (showNums ? `${kcal(e)} kcal` : '');
     $app.innerHTML = `${modeSwitch('food')}${dateNav('food', day)}
       ${showNums ? `<div class="card"><div class="row" style="align-items:flex-end"><div class="grow"><div class="small muted">Eaten</div><div style="font-family:var(--display);font-size:2rem">${num(cb.eaten)} <span class="small muted">kcal</span></div></div>
         <div style="text-align:right"><div class="small muted">${cb.remaining >= 0 ? 'Left today' : 'Over your guide by'}</div><div style="font-family:var(--display);font-size:1.4rem">${num(Math.abs(cb.remaining ?? 0))}</div></div></div>
@@ -132,7 +133,7 @@
         <p class="small muted" style="margin:.4em 0 0">A guide, not a rule. Eating something is always better than skipping a meal.</p></div>`
         : '<div class="card"><p class="small muted" style="margin:0">Logging what you eat, without the numbers. Regular meals matter more than any total.</p></div>'}
       ${MEALS.map(([k, label]) => { const list = entries.filter((e) => e.meal_type === k); return `<div class="card"><div class="row"><h2 class="grow">${label}</h2><span class="small muted">${list.length && showNums ? `${list.reduce((a, e) => a + kcal(e), 0)} kcal` : ''}</span><button class="btn ghost" data-add="${k}">+ Add</button></div>
-        ${list.map((e) => `<div class="row small" style="padding:6px 0;border-top:1px solid var(--line)"><span class="grow">${esc(e.food_name)}${e.brand_name ? ` <span class="muted">${esc(e.brand_name)}</span>` : ''}<br><span class="muted">${num(e.quantity, 1)} ${esc(e.unit || '')}</span></span><span>${k(e)}</span><button class="btn ghost" data-del="${e.id}" aria-label="Remove">✕</button></div>`).join('') || '<p class="small muted" style="margin:0">Nothing yet.</p>'}</div>`; }).join('')}
+        ${list.map((e) => `<div class="row small" style="padding:6px 0;border-top:1px solid var(--line)"><span class="grow">${esc(e.food_name)}${e.brand_name ? ` <span class="muted">${esc(e.brand_name)}</span>` : ''}<br><span class="muted">${num(e.quantity, 1)} ${esc(e.unit || '')}</span></span><span>${kcalText(e)}</span><button class="btn ghost" data-del="${e.id}" aria-label="Remove">✕</button></div>`).join('') || '<p class="small muted" style="margin:0">Nothing yet.</p>'}</div>`; }).join('')}
       <div class="card"><div class="row"><h2 class="grow">🗓️ Meal plans</h2><button class="btn ghost" id="newPlan">+ New</button></div>
         <p class="small muted">Plan a week of meals once. Turning a plan on adds its meals to your diary each day — less deciding when you’re tired.</p>
         ${plans.map((p) => `<div class="row small" style="padding:6px 0;border-top:1px solid var(--line)"><span class="grow"><b>${esc(p.plan_name)}</b>${p.is_active ? ' · on' : ''}<br><span class="muted">${esc(String(p.start_date).slice(0, 10))} → ${esc(String(p.end_date).slice(0, 10))} · ${(p.assignments || []).length} meals</span></span><button class="btn ghost" data-pdel="${p.id}" aria-label="Delete plan">✕</button></div>`).join('') || '<p class="small muted" style="margin:0">No plans yet.</p>'}</div>

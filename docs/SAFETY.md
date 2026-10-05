@@ -54,6 +54,8 @@ Basis: docs/research/reports/ADHD coach app blueprint.md.
 | H22 | Agent-linked goals pressure or shame (money, body targets) | "Not yet" is silent and neutral — no nudge, no red state, no failure count; only success notifies; guide tells people to delete goals that feel like pressure Residual: low–medium. |
 | H23 | Agent acts instead of reading (sends, pays, changes) | Every agent prompt says read-only; docs require read-only credentials; Pippin never passes credentials — residual risk sits with the agent's own permissions. Residual: medium. |
 | H24 | Sensitive financial/health detail stored or leaked via the agent's answer | Evidence capped at ~100 chars, asked to omit names/account numbers, encrypted at rest; never sent to the coach model or push. Residual: low. |
+| H25 | Food tracking feeding restriction or disordered eating | Calorie "guide" wording, never "over/under" judgements beyond a neutral number; "eating something is always better than skipping"; per-device **hide the numbers** switch; binge-eating quit category still never records calories; coach never sees food or weight data. Residual: medium — anyone with an eating-disorder history should keep numbers hidden or not use Food. |
+| H26 | Garmin password exposure | Password sent once over the private Docker network to the backend, which signs in to Garmin and keeps only encrypted tokens; Pippin never stores or logs it. Residual: low. |
 
 ## Re-testing
 ```

@@ -14,6 +14,7 @@ key only your server holds. Coach conversations are deleted after 60 days by def
 | Coach / chat model | Your messages and the context the coach needs | The model endpoint you configure. **Use a local one** (Ollama, llama.cpp) and nothing leaves. The app warns you if the endpoint isn't local |
 | Chat web search (`CHAT_WEB=true`) | Search terms and the addresses of pages it reads | Your SearXNG instance and those websites. The private coach never searches |
 | Your agent (`BRAIN=hermes` / `agent`) | The goal-check question, the date and time; for "plan my day" your mood/energy and today's goal titles — never chats, journal, sobriety or questionnaire data | The agent you run. What *it* reads (email, bank, health) is under its own permissions |
+| Fitness add-on | Garmin: your Garmin sign-in (once) and the sync requests; food search terms to Open Food Facts; exercise search to the open exercise database | Garmin, openfoodfacts.org, the exercise database. Your diary, workouts and health data stay in the fitness database on your server |
 | Web Push nudges | A short, discreet notification ("Time for a small step") — never health details | Your browser vendor's push service (Google, Apple, Mozilla) |
 | Live WhatsApp link | Nothing is sent; it **reads** who messaged whom and when (never content) | — |
 
