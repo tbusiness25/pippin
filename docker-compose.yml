@@ -65,6 +65,64 @@ services:
       - wadata:/data
     # no published ports: only the app can reach its control API
 
+  # ---- Optional fitness backend (COMPOSE_PROFILES=fitness): food diary, meal plans, workouts, Garmin sync.
+  # SparkyFitness (github.com/CodeWithCJ/SparkyFitness) runs headless; Pippin has its own screens for it.
+  # Only the app can reach it — no published ports.
+  sparky-db:
+    profiles: [fitness]
+    image: postgres:18.3-alpine
+    container_name: ${CONTAINER_PREFIX:-pippin}-sparky-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: sparkyfitness_db
+      POSTGRES_USER: sparky
+      POSTGRES_PASSWORD: ${SPARKY_DB_PASSWORD}
+    volumes:
+      - ${SPARKY_DATA_DIR:-./data/sparky}/postgresql:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sparky -d sparkyfitness_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  sparky-server:
+    profiles: [fitness]
+    image: codewithcj/sparkyfitness_server:${SPARKY_VERSION:-latest}
+    container_name: ${CONTAINER_PREFIX:-pippin}-sparky-server
+    restart: unless-stopped
+    environment:
+      SPARKY_FITNESS_DB_HOST: sparky-db
+      SPARKY_FITNESS_DB_PORT: "5432"
+      SPARKY_FITNESS_DB_NAME: sparkyfitness_db
+      SPARKY_FITNESS_DB_USER: sparky
+      SPARKY_FITNESS_DB_PASSWORD: ${SPARKY_DB_PASSWORD}
+      SPARKY_FITNESS_APP_DB_USER: sparky_app
+      SPARKY_FITNESS_APP_DB_PASSWORD: ${SPARKY_APP_DB_PASSWORD}
+      SPARKY_FITNESS_API_ENCRYPTION_KEY: ${SPARKY_ENCRYPTION_KEY}
+      BETTER_AUTH_SECRET: ${SPARKY_AUTH_SECRET}
+      SPARKY_FITNESS_FRONTEND_URL: http://app:8080
+      SPARKY_FITNESS_SERVER_PORT: "3010"
+      SPARKY_FITNESS_LOG_LEVEL: WARN
+      GARMIN_MICROSERVICE_URL: http://sparky-garmin:8000
+      NODE_ENV: production
+      TZ: ${TZ_DEFAULT:-Europe/London}
+    volumes:
+      - ${SPARKY_DATA_DIR:-./data/sparky}/backup:/app/SparkyFitnessServer/backup
+      - ${SPARKY_DATA_DIR:-./data/sparky}/uploads:/app/SparkyFitnessServer/uploads
+    depends_on:
+      sparky-db:
+        condition: service_healthy
+
+  sparky-garmin:
+    profiles: [fitness]
+    image: codewithcj/sparkyfitness_garmin:${SPARKY_VERSION:-latest}
+    container_name: ${CONTAINER_PREFIX:-pippin}-sparky-garmin
+    restart: unless-stopped
+    environment:
+      GARMIN_SERVICE_PORT: "8000"
+      GARMIN_SERVICE_IS_CN: "false"
+
 volumes:
   pgdata:
     name: ${PGDATA_VOLUME:-pippin-pgdata}

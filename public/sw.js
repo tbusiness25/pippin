@@ -1,6 +1,6 @@
 // Service worker. Network-first for everything; the shell is cached so the app opens offline.
 const CACHE = 'finch-__SW_VERSION__';
-const SHELL = ['/', '/css/app.css?v=__SW_VERSION__', '/js/sprig.js?v=__SW_VERSION__', '/js/app.js?v=__SW_VERSION__', '/js/room.js?v=__SW_VERSION__', '/js/sounds.js?v=__SW_VERSION__', '/js/explore.js?v=__SW_VERSION__', '/js/shop.js?v=__SW_VERSION__', '/js/friends.js?v=__SW_VERSION__', '/js/talk.js?v=__SW_VERSION__', '/js/coach.js?v=__SW_VERSION__', '/js/life.js?v=__SW_VERSION__', '/js/habits.js?v=__SW_VERSION__', '/js/sober.js?v=__SW_VERSION__', '/icons/icon.svg', '/manifest.json'];
+const SHELL = ['/', '/css/app.css?v=__SW_VERSION__', '/js/sprig.js?v=__SW_VERSION__', '/js/app.js?v=__SW_VERSION__', '/js/room.js?v=__SW_VERSION__', '/js/sounds.js?v=__SW_VERSION__', '/js/explore.js?v=__SW_VERSION__', '/js/shop.js?v=__SW_VERSION__', '/js/friends.js?v=__SW_VERSION__', '/js/talk.js?v=__SW_VERSION__', '/js/coach.js?v=__SW_VERSION__', '/js/life.js?v=__SW_VERSION__', '/js/habits.js?v=__SW_VERSION__', '/js/sober.js?v=__SW_VERSION__', '/js/fitness.js?v=__SW_VERSION__', '/icons/icon.svg', '/manifest.json'];
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).catch(() => {}));

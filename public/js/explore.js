@@ -32,7 +32,10 @@
         `<button class="btn ${daily.answer === i ? '' : 'secondary'} grow" data-a="${i}">${esc(o)}</button>`).join('<span class="muted">or</span>')}</div>
         <p class="small muted" id="dqt" style="margin:.6em 0 0">${daily.answer == null ? 'No wrong answers.' : ''}</p></div>
       <div class="grid" style="margin-bottom:14px"><a class="tile" href="#habits"><span class="em">🔁</span><b>Habits</b><span class="small muted">Small, anchored, a few times a week</span></a>
-        <a class="tile" href="#sober"><span class="em">🌱</span><b>Alcohol-free & quitting</b><span class="small muted">Count the days you keep</span></a></div>
+        <a class="tile" href="#sober"><span class="em">🌱</span><b>Alcohol-free & quitting</b><span class="small muted">Count the days you keep</span></a>
+        <a class="tile" href="#fitness"><span class="em">⌚</span><b>Watch</b><span class="small muted">Sleep, HRV, stress, steps, BP</span></a>
+        <a class="tile" href="#food"><span class="em">🍽️</span><b>Food</b><span class="small muted">Diary & meal plans</span></a>
+        <a class="tile" href="#workouts"><span class="em">🏋️</span><b>Workouts</b><span class="small muted">Log sets, save routines</span></a></div>
       <h2>Coach skills</h2><div class="tabs2">${[['urge', '🌊 Having an urge'], ['event', '🎉 Plan for an event'], ['stuck', '🧱 Can’t start'], ['hard', '🎯 Before a hard thing'], ['thought', '🧠 Thought check'], ['impulse', '⏸️ Pause before acting'], ['weekly', '🗓️ Weekly review'], ['people', '💛 Reach out']].map(([id, l]) => `<a class="chip" href="#coach/flow/${id}" style="text-decoration:none">${l}</a>`).join('')}</div>
       <div class="grid">${tiles.map(([id, em, name, sub]) => `<a class="tile" href="#explore/${id}"><span class="em">${em}</span><b>${name}</b><span class="small muted">${sub}</span></a>`).join('')}</div>
       <div style="height:14px"></div>

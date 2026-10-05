@@ -72,6 +72,7 @@ app.use('/api/sober', require('./src/routes/sober'));
 app.use('/api/report', require('./src/routes/report'));
 app.use('/api/chat', require('./src/routes/chat'));
 app.use('/api/voice', require('./src/routes/voice'));
+app.use('/api/fitness', require('./src/routes/fitness'));
 
 // HTML is never cached; versioned assets can be.
 app.get('/manifest.json', (req, res) => res.type('application/manifest+json').set('Cache-Control', 'no-cache')
