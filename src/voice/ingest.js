@@ -20,7 +20,11 @@ const { encrypt } = require('../coach/crypto');
 const DIR = process.env.VOICE_NOTES_DIR || '';
 const STORE = process.env.AUDIO_STORE || '/data/audio';
 const ACT_WITHIN_DAYS = 3;
+const KEEP_ALL_AUDIO = process.env.VOICE_KEEP_ALL_AUDIO === 'true';
 const KEEP_AUDIO = new Set(['kids', 'memory']);
+// Optional: file each note into a folder per category inside the voice-notes folder (needs a writable mount).
+const FILE_INTO_FOLDERS = process.env.VOICE_FILE_INTO_FOLDERS === 'true';
+const FOLDERS = { kids: 'Kids', memory: 'Memories', journal: 'Journal', reminder: 'Reminders', work: 'Work', other: 'Other' };
 const FROM_ROUTER = { 'kids-memory': 'kids', 'work-todo': 'work', reminder: 'reminder', 'life-admin': 'reminder', general: 'other' };
 let running = false;
 
@@ -130,12 +134,54 @@ async function route(owner, note, file) {
       [owner.id, cat === 'kids' ? 'kids' : 'note', String(title || 'A memory').slice(0, 120), String(summary || '').slice(0, 2000), `Voice Notes/${path.basename(file)}`, recorded]);
     actions.push({ type: 'memory' });
   }
-  const kept = KEEP_AUDIO.has(cat) ? keepAudio(note.audio, note.rid) : null;
+  const kept = KEEP_ALL_AUDIO || KEEP_AUDIO.has(cat) ? keepAudio(note.audio, note.rid) : null;
   await pool.query(`INSERT INTO voice_notes(user_id, recording_id, recorded_at, source_file, category, title, summary, transcript_enc, audio_file, vault_audio, actions, starred, routed_at)
                     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,NOW()) ON CONFLICT (user_id, recording_id) DO NOTHING`,
     [owner.id, note.rid, recorded, path.basename(file), cat, String(title || '').slice(0, 120), String(summary || '').slice(0, 1000),
       note.transcript ? encrypt(note.transcript) : null, kept, note.audio, JSON.stringify(actions), cat === 'kids']);
   return { cat, actions, recent: ageDays <= ACT_WITHIN_DAYS };
+}
+
+// The exporter writes "*(not transcribed yet)*" and fills it in later — wait for the real thing.
+const realTranscript = (t) => !!t && t.length > 3 && !/^\*\(/.test(t.trim()) && !/pending/i.test(t.slice(0, 40));
+
+// A top-level note is safe to move once it's finished: a real transcript, and either the tagging script has
+// stamped it (category: in its frontmatter) or it's over a day old. The exporter never rewrites finished notes.
+function readyToFile(abs) {
+  try {
+    const raw = fs.readFileSync(abs, 'utf8');
+    const t = ((raw.split(/^## Transcript\s*$/m)[1] || '').split(/^## /m)[0] || '').trim();
+    if (!realTranscript(t)) return false;
+    const fm = (raw.match(/^---\n([\s\S]*?)\n---/) || [])[1] || '';
+    return /^category:/m.test(fm) || Date.now() - fs.statSync(abs).mtimeMs > 86400000;
+  } catch { return false; }
+}
+
+// Move notes into their category folder (and back again if re-categorised), and back up any audio not kept yet.
+async function fileAll(ownerId) {
+  const { rows } = await pool.query(
+    `SELECT id, recording_id, category, source_file, vault_audio, audio_file FROM voice_notes WHERE user_id=$1 AND deleted_at IS NULL`, [ownerId]);
+  let moved = 0, copied = 0;
+  for (const n of rows) {
+    if (KEEP_ALL_AUDIO && !n.audio_file && n.vault_audio) {
+      const kept = keepAudio(n.vault_audio, n.recording_id);
+      if (kept) { await pool.query('UPDATE voice_notes SET audio_file=$2 WHERE id=$1', [n.id, kept]); copied++; }
+    }
+    if (!FILE_INTO_FOLDERS || !n.source_file) continue;
+    const want = path.join(FOLDERS[n.category] || 'Other', path.basename(n.source_file));
+    if (n.source_file === want) continue;
+    const src = path.join(DIR, n.source_file), dest = path.join(DIR, want);
+    if (!fs.existsSync(src) || fs.existsSync(dest)) continue;
+    if (!n.source_file.includes('/') && !readyToFile(src)) continue;
+    try {
+      fs.mkdirSync(path.dirname(dest), { recursive: true });
+      fs.renameSync(src, dest);
+      await pool.query('UPDATE voice_notes SET source_file=$2 WHERE id=$1', [n.id, want]);
+      await pool.query('UPDATE memories SET vault_path=$3 WHERE user_id=$1 AND vault_path=$2', [ownerId, `Voice Notes/${n.source_file}`, `Voice Notes/${want}`]);
+      moved++;
+    } catch (e) { console.warn('[voice] could not file', n.source_file, e.message); }
+  }
+  if (moved || copied) console.log(`[voice] filed ${moved} note(s) into folders, backed up ${copied} audio file(s)`);
 }
 
 async function scan() {
@@ -152,7 +198,7 @@ async function scan() {
     for (const f of files) {
       let note;
       try { note = parse(f); } catch { continue; }
-      if (!note.rid || seen.has(note.rid) || !note.transcript || /pending/i.test(note.transcript.slice(0, 40))) continue;
+      if (!note.rid || seen.has(note.rid) || !realTranscript(note.transcript)) continue;
       const r = await route(owner, note, f);
       done++;
       if (r.recent) {
@@ -163,6 +209,7 @@ async function scan() {
     if (done) console.log(`[voice] routed ${done} recording(s)`);
     const parts = [summary.reminders && `${summary.reminders} to-do${summary.reminders === 1 ? '' : 's'}`, summary.kids && `${summary.kids} kids’ recording${summary.kids === 1 ? '' : 's'} saved`,
       summary.memories && `${summary.memories} memor${summary.memories === 1 ? 'y' : 'ies'}`, summary.journal && 'a journal entry'].filter(Boolean);
+    await fileAll(owner.id);
     if (parts.length) require('../push').notify(owner.id, 'voice', `From your recordings: ${parts.join(', ')}.`, { ref: `voice:${Date.now()}`, url: '/#voice' }).catch(() => {});
   } catch (e) { console.error('[voice] scan failed:', e.message); }
   finally { running = false; }
@@ -175,4 +222,4 @@ function start() {
   console.log(`[voice] watching ${DIR}`);
 }
 
-module.exports = { start, scan, STORE, route, parse };
+module.exports = { start, scan, STORE, route, parse, fileAll, FOLDERS };

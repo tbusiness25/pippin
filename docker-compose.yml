@@ -38,7 +38,7 @@ services:
       # Optional Obsidian folder: the app writes ONLY here, and only what you approve.
       - ${VAULT_HOST_DIR:-./vault}:/vault
       # Optional voice-note folder — READ-ONLY. Important audio is copied into ./data.
-      - ${VOICE_NOTES_HOST_DIR:-./voice-notes}:/voice-notes:ro
+      - ${VOICE_NOTES_HOST_DIR:-./voice-notes}:/voice-notes:${VOICE_NOTES_MOUNT:-ro}
       - ./data:/data
     extra_hosts:
       - "host.docker.internal:host-gateway"

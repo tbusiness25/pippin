@@ -56,6 +56,7 @@ router.post('/:id/category', async (req, res) => {
     if (fs.existsSync(src)) { fs.mkdirSync(ingest.STORE, { recursive: true }); kept = path.join(ingest.STORE, `${rows[0].recording_id.replace(/[^\w-]/g, '_')}${path.extname(src)}`); if (!fs.existsSync(kept)) fs.copyFileSync(src, kept); }
   }
   await pool.query('UPDATE voice_notes SET category=$3, audio_file=$4, starred = starred OR $3 = \'kids\' WHERE id=$1 AND user_id=$2', [req.params.id, req.uid, cat, kept]);
+  ingest.fileAll(req.uid).catch(() => {});   // move the note to its new folder
   res.json({ ok: true });
 });
 
