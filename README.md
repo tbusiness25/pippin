@@ -192,7 +192,7 @@ AI_MODEL=qwen3:8b
 # Ollama on another computer on your network
 AI_PROVIDER=ollama
 AI_MODEL=qwen3:14b
-AI_BASE_URL=http://192.168.1.50:11434/v1
+AI_BASE_URL=http://my-gpu-box.local:11434/v1
 
 # Claude
 AI_PROVIDER=anthropic
