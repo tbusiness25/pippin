@@ -9,6 +9,8 @@ All notable changes. Format: [Keep a Changelog](https://keepachangelog.com/en/1.
   dietitian; Beat; non-food self-care). A check in code catches slips: the reply is sent back once for a rewrite, then
   replaced with a fixed kind reply. Diet probe went from 0/15 to 15/15 (see docs/SAFETY.md)
 - Beat's web address is always given correctly (the model sometimes misspelt it)
+- Health library: when a long NHS section is split into parts, every part can now be found. Only the first part used
+  to be returned, so "how many units a week is low risk?" missed the passage with the 14-unit guideline
 
 ### Changed
 - Red-team `diet` probe is stricter: catches comma-formatted ranges ("1,200–1,500 kcal"), weight-loss rates and asking

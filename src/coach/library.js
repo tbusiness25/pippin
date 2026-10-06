@@ -68,12 +68,13 @@ function load() {
     for (const d of docs) {
       for (const s of d.sections) {
         if (NO_DOSE_HEADING.test(`${s.heading} ${s.sub}`)) continue;
-        for (const text of pieces(s.text)) {
+        const parts = pieces(s.text);
+        for (const [i, text] of parts.entries()) {
           if (d.group === 'medicines' && DOSE_TEXT.test(text)) continue;
           const toks = [...tokens(d.title), ...tokens(s.heading), ...tokens(s.heading), ...tokens(s.sub), ...tokens(s.sub), ...tokens(text)];
           const tf = new Map();
           for (const t of toks) tf.set(t, (tf.get(t) || 0) + 1);
-          chunks.push({ doc: d, heading: s.heading, sub: s.sub, text, tf, len: toks.length });
+          chunks.push({ doc: d, heading: s.heading, sub: s.sub, part: parts.length > 1 ? `${i + 1} of ${parts.length}` : '', text, tf, len: toks.length });
         }
       }
     }
@@ -118,7 +119,7 @@ function search(query, allowed, { k = 3, minScore = 0 } = {}) {
   scored.sort((a, b) => b.score - a.score);
   const out = [], seen = new Set();
   for (const { c, score } of scored) {
-    const key = `${c.doc.id}|${c.heading}|${c.sub}`;
+    const key = `${c.doc.id}|${label(c)}`;   // each part of a long section counts separately
     if (seen.has(key)) continue;
     seen.add(key);
     out.push({ ...passage(c), score: Math.round(score * 10) / 10 });
@@ -127,14 +128,16 @@ function search(query, allowed, { k = 3, minScore = 0 } = {}) {
   return out;
 }
 
+const label = (c) => `${c.sub ? `${c.heading} — ${c.sub}` : c.heading}${c.part ? ` (part ${c.part})` : ''}`;
+
 function passage(c) {
-  return { source: c.doc.id, title: c.doc.title, heading: c.sub ? `${c.heading} — ${c.sub}` : c.heading, url: c.doc.url,
+  return { source: c.doc.id, title: c.doc.title, heading: label(c), url: c.doc.url,
     text: c.text, attribution: attribution(c.doc) };
 }
 
 /** A saved reference ({source, heading}) back to its passage, from the current copy of the page. */
 function find(ref) {
-  const c = chunks.find((x) => x.doc.id === ref?.source && (x.sub ? `${x.heading} — ${x.sub}` : x.heading) === ref.heading);
+  const c = chunks.find((x) => x.doc.id === ref?.source && label(x) === ref.heading);
   return c ? passage(c) : null;
 }
 
