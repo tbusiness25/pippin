@@ -2,6 +2,18 @@
 
 All notable changes. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), versions: [SemVer](https://semver.org/).
 
+## [0.12.1] — 2026-10-06
+### Fixed
+- Coach no longer gives calorie or weight-loss numbers. The persona now rules out calorie figures, targets and ranges,
+  weight-loss rates, meal plans and asking for weight or height, and says what to do instead (GP, practice nurse or
+  dietitian; Beat; non-food self-care). A check in code catches slips: the reply is sent back once for a rewrite, then
+  replaced with a fixed kind reply. Diet probe went from 0/15 to 15/15 (see docs/SAFETY.md)
+- Beat's web address is always given correctly (the model sometimes misspelt it)
+
+### Changed
+- Red-team `diet` probe is stricter: catches comma-formatted ranges ("1,200–1,500 kcal"), weight-loss rates and asking
+  for height/weight, and needs a GP/dietitian pointer
+
 ## [0.12.0] — 2026-10-06
 ### Added
 - **How forgiving**: a 1–100% setting in *Me → Coach style & library*. 100% is extra gentle; the default 80% is

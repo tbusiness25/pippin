@@ -32,6 +32,19 @@ const addSources = (out, hits) => {
 
 const CLAIM = /\b(i'?ve|i have|i'?ll|i will|i’ve|i’ll)\s+(just\s+)?(saved|save|added|add|set|scheduled|booked|logged|noted|put)\b|\b(saved|added)\s+(it|that|this|your)\b|\bnudge (is )?set\b/i;
 
+// Diet check: calorie figures or ranges ("1,200–1,500 kcal/day", "a calorie target of 1500"), weight-loss rates
+// ("0.5–1 kg a week") or asking for their weight/height. The persona forbids these; this catches the model slipping.
+const NUM = String.raw`\d{1,3}(?:[,.\u00a0\u202f ]\d{3})+|\d+(?:\.\d+)?k?`;
+const DIET = new RegExp(String.raw`(?:${NUM})\s*(?:(?:[-–—]|to)\s*(?:${NUM})\s*)?-?\s*(?:k?cals?|kcals?|kilocalories|calories?)\b`
+  + String.raw`|\b(?:k?cals?|calories?)\b[^.\n]{0,25}?\b\d{3,4}\b`
+  + String.raw`|\d(?:\.\d)?\s*(?:[-–—]|to)\s*\d(?:\.\d)?\s*(?:kg|kilos?|lbs?|pounds)\s*(?:a|per|each)\s*week`
+  + String.raw`|\b(?:what(?:'s| is| are)|tell me|share|know)\s+your\s+(?:current\s+)?(?:height|weight|BMI)\b|how tall are you|how much do you (?:currently )?weigh`, 'i');
+// The model misspells Beat's address (seen: beat.org.uk, beateatingdisasters.org.uk); always give the real one.
+const BEAT_URL = /\b(?:www\.)?beat[a-z-]*\.org(?:\.uk)?\b/gi;
+const DIET_FALLBACK = 'I can’t help with calorie numbers, diet plans or weight-loss targets — that’s one for your GP, practice nurse '
+  + 'or a registered dietitian, who can help you do it safely. What I can help with is the rest: sleep, a walk or movement you enjoy, '
+  + 'stress, or getting that GP appointment booked. Shall we pick one small thing for today?';
+
 async function profileOf(uid) {
   const { rows } = await pool.query('SELECT data_enc FROM coach_profile WHERE user_id=$1', [uid]);
   try { return rows.length ? JSON.parse(decrypt(rows[0].data_enc)) : null; } catch { return null; }
@@ -170,9 +183,21 @@ async function turn(uid, { text, flow }) {
       msgs.push({ role: 'user', content: '[System check: your last reply says you saved, added or set something, but no tool was called, so nothing was saved. Call the right tool now (propose_memory, save_commitment, add_to_inbox or add_goal_today) and then give a one-line confirmation. If nothing should be saved, correct yourself in one line.]' });
       continue;
     }
+    // Diet check: ask once for a rewrite without the numbers; if it still has them, use a fixed kind reply.
+    if (DIET.test(out.reply)) {
+      if (round < MAX_TOOL_ROUNDS && !out._dietChecked) {
+        out._dietChecked = true;
+        msgs.push({ role: 'assistant', content: out.reply });
+        msgs.push({ role: 'user', content: '[System check: your last reply gave calorie numbers, a weight-loss rate or asked for their weight or height. You never give diet, calorie or weight-loss advice. Rewrite it, warm and brief, with NO numbers about food, calories or weight and without repeating theirs: kindly say it isn\'t something you can help with safely, suggest their GP or a registered dietitian, and offer one non-food thing you can help with. Reply to them directly; don\'t mention this check.]' });
+        continue;
+      }
+      out.reply = DIET_FALLBACK;
+    }
+    out.reply = out.reply.replace(BEAT_URL, 'beateatingdisorders.org.uk');
     break;
   }
   delete out._rechecked;
+  delete out._dietChecked;
   await store(uid, 'assistant', out.reply, flow, out.sources);
   if (out.actions.some((a) => a.type === 'commitment' || a.type === 'inbox')) vault.syncPlans(uid).catch(() => {});
   return out;
