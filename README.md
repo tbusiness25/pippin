@@ -68,7 +68,7 @@ It runs on your server, works offline, and installs as an app on Android, iPhone
 
 **Contents:** [Why](#why-another-adhd-app) · [Features](#features) · [Install](#install) · [Choosing an AI](#choosing-an-ai)
 · [Connecting your agent](#connecting-your-agent) · [Fitness](#fitness-garmin-food-and-workouts) · [HTTPS and your phone](#https-and-installing-on-your-phone)
-· [Updating and backups](#updating-and-backups) · [Configuration](#configuration) · [Safety and privacy](#safety-and-privacy)
+· [Updating and backups](#updating-and-backups) · [Configuration](#configuration) · [Safety and privacy](#safety-and-privacy) · [FAQ](#faq)
 
 ## Why another ADHD app?
 There are good pet apps (Finch), good ADHD planners (Tiimo, Sprout), good sobriety apps (I Am Sober, Reframe) and
@@ -320,6 +320,59 @@ Everything is in [`.env.example`](.env.example), with comments. Beyond the AI se
 
 The design is grounded in published research. The reports and their sources are in
 [docs/research](docs/research/reports/).
+
+## FAQ
+
+**Is it really free?**
+Yes. No ads, no subscription, no paywalled self-care, and cosmetics are earned in-app. There's no company behind it
+and nothing for sale. The only possible cost is a cloud AI key if you choose one over a local model.
+
+**Do I need a server?**
+You need a computer that's switched on most of the time, because that's where Pippin runs and where your nudges come
+from. A spare laptop, a mini PC or a home server is plenty. You install it with Docker on Linux, macOS or Windows
+(see [Install](#install)), then use it from your phone. Setting it up is the hardest part. After that it's just an app.
+
+**Does it work on my phone?**
+Yes, on Android and iPhone. It's a web app you add to your home screen, so there's nothing to download from an app
+store. Your phone needs an HTTPS address for it, and [Tailscale](#https-and-installing-on-your-phone) is the
+easiest free way to get one.
+
+**Do I need a powerful computer or a graphics card for the AI?**
+No. You can use your own ChatGPT, Claude, Gemini or OpenRouter API key instead. If you'd rather keep everything
+private, a local model through Ollama works, and 8B models run on many ordinary machines. See
+[Choosing an AI](#choosing-an-ai).
+
+**Do I need an AI agent like Hermes?**
+No. Without one, Pippin is still the full companion: the pet, goals, habits, coach, sobriety tracker and check-ins.
+The agent is an optional extra that lets goals tick themselves from your real email, calendar, bank and health data.
+
+**Can it see my bank account and emails?**
+Only if you connect an agent and give *that agent* access. Pippin never holds your bank or email passwords. It asks
+your agent read-only yes/no questions such as "Is my current account above £200?" and stores only the short answer,
+encrypted. You decide how much the agent can see, from nothing to everything.
+
+**Does it read my WhatsApp messages?**
+No. The friends feature only uses *who* messaged *whom* and *when*. It never reads what was said, and it skips
+group chats. The safest way to use it is to import a WhatsApp or Facebook export. The optional live WhatsApp link
+uses an unofficial library that may break or cause WhatsApp to restrict your account (see
+[known issues](docs/KNOWN_ISSUES.md)).
+
+**Where does my data go?**
+It stays on your computer. There's no cloud and no telemetry, and the project never receives anything. Coach and
+chat messages are encrypted at rest. The only things that ever leave are the ones you switch on, such as a cloud AI
+model. [PRIVACY.md](PRIVACY.md) lists every one.
+
+**Will the pet get sad, sick or die if I forget about it for a week?**
+Never. There's no decay, no guilt and no lost progress. Streaks are optional and never used as punishment, and
+missing a habit dents its score instead of wiping it. Pippin is designed for people who drop things and come back.
+
+**Is it a copy of Finch?**
+No. It's an independent app that was inspired by self-care pet apps like Finch. All the code, art, sounds and text
+are original.
+
+**Is it therapy?**
+No. It's a self-help wellbeing tool for adults, not a medical device. If you're struggling, please speak to your GP.
+The crisis helplines are at the [top of this page](#pippin-).
 
 ## Status
 Version 0.10 is an early public release, by one person. Everything listed works, but read
