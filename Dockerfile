@@ -8,6 +8,7 @@ COPY src ./src
 COPY migrations ./migrations
 COPY scripts ./scripts
 COPY public ./public
+COPY library ./library
 ARG SW_VERSION=dev
 ENV SW_VERSION=${SW_VERSION}
 EXPOSE 8080

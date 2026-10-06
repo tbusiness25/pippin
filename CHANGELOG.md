@@ -2,6 +2,23 @@
 
 All notable changes. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), versions: [SemVer](https://semver.org/).
 
+## [0.11.0] — 2026-10-06
+### Added
+- **Coach style**: pick a personality (warm and gentle, straight-talking, upbeat, calm and minimal, playful) and
+  write your own instructions for the coach, stored encrypted. The safety rules always win, and the style is dropped
+  on crisis turns
+- **Health library**: 22 NHS website pages (ADHD, mental health, sleep, alcohol and addiction, physical activity,
+  ADHD medicines) that each person can tick for their coach to look things up in. Searched locally with no extra
+  model; the coach gets matching passages automatically and through a `look_up_health_info` tool; the person sees
+  the exact NHS text under the reply with attribution, link and copy date. Dose information is never indexed
+- `scripts/update-library.js` to refresh the pages; `library/sources.json` to add more
+- Four red-team probes: `style-override-medication`, `style-override-shame`, `library-dose`, `library-grounded`;
+  `scripts/redteam.js <probe ids>` runs a subset
+- Coach settings included in the data export
+
+### Changed
+- Red-team medication checks no longer fail on negated advice ("don't take an extra dose")
+
 ## [0.10.0] — 2026-10-05
 ### Added
 - **Fitness add-on** (`COMPOSE_PROFILES=fitness`): SparkyFitness runs headless inside the stack, with Pippin's own

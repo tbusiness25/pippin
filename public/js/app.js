@@ -639,6 +639,7 @@ window.APP = window.APP || (window.__BUILD__ && window.__BUILD__.appName) || "Ap
         <a class="tile" href="#journal"><span class="em">📖</span><b>Adventures</b><span class="small muted">${s.pet.adventures} so far</span></a>
         <a class="tile" href="#explore/insights"><span class="em">📈</span><b>Insights</b><span class="small muted">Mood & patterns</span></a>
         <a class="tile" href="#safety"><span class="em">🛟</span><b>Safety plan</b><span class="small muted">For hard moments</span></a>
+        <a class="tile" href="#coachsettings"><span class="em">🎛️</span><b>Coach style & library</b><span class="small muted">Personality, instructions, NHS pages</span></a>
         <a class="tile" href="#privacy"><span class="em">🔒</span><b>Coach & privacy</b><span class="small muted">What it knows, export, delete</span></a>
         <a class="tile" href="#report"><span class="em">📄</span><b>Share with GP / therapist</b><span class="small muted">PDF of what you choose</span></a>
         <a class="tile" href="#inbox"><span class="em">📥</span><b>Inbox</b><span class="small muted">Everything you’ve captured</span></a></div></div>

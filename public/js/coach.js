@@ -30,6 +30,15 @@
     }).join('');
   }
 
+  // Passages from the NHS website shown word for word, set apart from the coach's reply, with the
+  // attribution, date and link the NHS licence asks for.
+  function sourceCards(sources) {
+    return (sources || []).map((s) => `<details class="card small" style="background:var(--bg);margin:6px 0">
+      <summary>📘 <b>${esc(s.title)}</b> — ${esc(s.heading)}</summary>
+      <div style="white-space:pre-wrap;margin:8px 0">${esc(s.text)}</div>
+      <a href="${esc(s.url)}" target="_blank" rel="noopener">${esc(s.attribution)} ↗</a></details>`).join('');
+  }
+
   function bindMemoryButtons(root) {
     root.querySelectorAll('[data-memok]').forEach((b) => b.onclick = async () => {
       try { const r = await api(`/api/plans/memories/${b.dataset.memok}/approve`, { body: {} }); toast(r.saved ? `Saved to Obsidian: ${r.saved}` : 'Saved'); b.closest('[data-mem]').innerHTML = '💾 Saved to your journal'; }
@@ -51,14 +60,14 @@
     const st = F.state;
     const lastActive = st.lastActiveDaysAgo;
     $app.innerHTML = `${F.modeSwitch ? F.modeSwitch('coach') : ''}
-      <div class="row"><h1 class="grow">Your coach</h1><button class="btn ghost" id="spk" title="Read replies aloud">${speakReplies ? '🔊' : '🔈'}</button></div>
+      <div class="row"><h1 class="grow">Your coach</h1><a class="btn ghost" href="#coachsettings" title="Coach style & health library" aria-label="Coach settings">⚙️</a><button class="btn ghost" id="spk" title="Read replies aloud">${speakReplies ? '🔊' : '🔈'}</button></div>
       <p class="small muted" style="margin-top:-6px">🔒 ${info.local ? `Private — runs on your own server (${esc(info.model)}).` : `<b style="color:var(--danger)">Not local:</b> ${esc(info.model)} — conversations leave your network.`} An AI coach, not a therapist. Chats are encrypted and deleted after ${info.retentionDays} days.</p>
       <div class="tabs2" id="flows">${info.flows.filter((f) => f.id !== 'welcome').map((f) => `<button class="chip" data-flow="${f.id}">${esc(f.label)}</button>`).join('')}</div>
       ${pending.length ? `<div class="card"><b>Waiting for your OK</b>${pending.map((m) => `<div data-mem="${m.id}" style="margin-top:8px"><div class="small"><b>${esc(m.title)}</b></div><div class="small muted" style="white-space:pre-wrap">${esc(m.body.slice(0, 280))}</div>
         <div class="row" style="margin-top:4px"><button class="btn secondary" data-memok="${m.id}">Save to journal</button><button class="btn ghost" data-memno="${m.id}">Skip</button></div></div>`).join('')}</div>` : ''}
       <div id="crisisSlot"></div>
       <div class="card"><div class="chat" id="chat" style="max-height:52vh">${messages.length ? messages.map((m) => m.role === 'event'
-        ? `<div class="small muted center">— ${esc(m.content)} —</div>` : `<div class="msg ${m.role}">${m.role === 'assistant' ? md(m.content) : esc(m.content)}</div>`).join('')
+        ? `<div class="small muted center">— ${esc(m.content)} —</div>` : `<div class="msg ${m.role}">${m.role === 'assistant' ? md(m.content) : esc(m.content)}</div>${sourceCards(m.sources)}`).join('')
         : `<p class="muted">Tap one of the buttons above, or just say what’s going on. Good places to start: <b>📝 Tell my coach about me</b>, or <b>☀️ Plan my morning</b>.</p>`}</div>
         <div class="row" style="margin-top:10px">${info.voice ? '<button class="btn secondary" id="mic" aria-label="Talk" style="min-width:52px">🎙️</button>' : ''}
           <textarea id="say" rows="1" style="min-height:48px" placeholder="Say anything…"></textarea><button class="btn" id="send">Send</button></div>
@@ -72,7 +81,7 @@
 
     const showResult = (r) => {
       document.getElementById('typing')?.remove();
-      chat.insertAdjacentHTML('beforeend', `<div class="msg assistant">${md(r.reply)}</div>${actionChips(r.actions)}`);
+      chat.insertAdjacentHTML('beforeend', `<div class="msg assistant">${md(r.reply)}</div>${actionChips(r.actions)}${sourceCards(r.sources)}`);
       bindMemoryButtons(chat);
       if (r.crisis) {
         document.getElementById('crisisSlot').innerHTML = crisisCard(r.crisis, safety.plan);
@@ -159,6 +168,48 @@
     else if (!messages.length && lastActive != null && lastActive >= 4) startFlow('welcome');
   }
 
+  // ---------- coach style & health library ----------
+  async function settings() {
+    F.setTab('me');
+    const s = await api('/api/coach/settings');
+    const on = new Set(s.library);
+    const byGroup = Object.entries(s.groups).map(([g, label]) => [g, label, s.sources.filter((x) => x.group === g)]).filter(([, , list]) => list.length);
+    $app.innerHTML = `<a href="#me" class="btn ghost" style="padding-left:0">‹ Me</a><h1>Coach style & library</h1>
+      <div class="card"><h2>Personality</h2>
+        ${s.personalities.map((p) => `<label class="row" style="margin:8px 0;align-items:flex-start"><input type="radio" name="pers" value="${p.id}" style="width:22px;height:22px" ${s.personality === p.id ? 'checked' : ''}>
+          <span><b>${esc(p.label)}</b><br><span class="small muted">${esc(p.hint)}</span></span></label>`).join('')}</div>
+      <div class="card"><h2>Your instructions</h2>
+        <p class="small muted">Anything you’d tell a new coach: what to call you, how long replies should be, what to focus on, what doesn’t work for you. Your coach still keeps its safety rules whatever this says. Stored encrypted.</p>
+        <textarea id="instr" rows="5" maxlength="${s.maxInstructions}" placeholder="Call me T. Keep replies under 50 words. I work nights, so my morning is 4pm. Don’t suggest journaling, it never sticks.">${esc(s.instructions)}</textarea>
+        <div class="small muted" id="count" style="text-align:right"></div></div>
+      <div class="card"><h2>📘 Health library</h2>
+        <p class="small muted">Tick the NHS website pages your coach can look things up in. It searches them on your own server, so nothing is sent anywhere. When it uses one, you’ll see the exact NHS text under its reply, with a link to the page.</p>
+        ${s.sources.length ? byGroup.map(([g, label, list]) => `<div style="margin-top:12px"><label class="row"><input type="checkbox" data-group="${g}" style="width:22px;height:22px"><b>${esc(label)}</b></label>
+          ${g === 'medicines' ? '<p class="small muted" style="margin:2px 0 4px 32px">Dose information is left out on purpose. Ask your prescriber or pharmacist about doses.</p>' : ''}
+          ${list.map((x) => `<label class="row" style="margin:4px 0 4px 32px"><input type="checkbox" data-src="${x.id}" data-in="${g}" style="width:20px;height:20px" ${on.has(x.id) ? 'checked' : ''}>
+            <span class="grow">${esc(x.title)} <a href="${esc(x.url)}" target="_blank" rel="noopener" class="small" aria-label="Open the NHS page">↗</a><br><span class="small muted">Copied ${esc(x.copied_on || '')}${x.last_reviewed ? ` · NHS reviewed ${esc(x.last_reviewed)}` : ''}</span></span></label>`).join('')}</div>`).join('')
+        : '<p class="small">The library hasn’t been downloaded on this server yet. Run <code>node scripts/update-library.js</code>.</p>'}
+        <p class="small muted" style="margin-top:12px">${esc(s.licence)} <a href="https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/" target="_blank" rel="noopener">Read the licence ↗</a></p></div>
+      <button class="btn block" id="saveSet">Save</button>`;
+    const ta = document.getElementById('instr'), count = document.getElementById('count');
+    const upd = () => { count.textContent = `${ta.value.length} / ${s.maxInstructions}`; };
+    ta.oninput = upd; upd();
+    const syncGroups = () => $app.querySelectorAll('[data-group]').forEach((g) => {
+      const boxes = [...$app.querySelectorAll(`[data-in="${g.dataset.group}"]`)];
+      g.checked = boxes.every((b) => b.checked); g.indeterminate = !g.checked && boxes.some((b) => b.checked);
+    });
+    $app.querySelectorAll('[data-group]').forEach((g) => g.onchange = () => { $app.querySelectorAll(`[data-in="${g.dataset.group}"]`).forEach((b) => { b.checked = g.checked; }); });
+    $app.querySelectorAll('[data-src]').forEach((b) => b.addEventListener('change', syncGroups));
+    syncGroups();
+    document.getElementById('saveSet').onclick = async () => {
+      const personality = ($app.querySelector('[name="pers"]:checked') || {}).value;
+      const library = [...$app.querySelectorAll('[data-src]:checked')].map((b) => b.dataset.src);
+      try { await api('/api/coach/settings', { body: { personality, instructions: ta.value, library } }); toast('Saved — your coach will use this from the next message'); }
+      catch (e) { toast(e.message); }
+    };
+  }
+
   F.routes.coach = coach;
+  F.routes.coachsettings = settings;
   F.coachFlow = (id) => { location.hash = `#coach/flow/${id}`; };
 })();

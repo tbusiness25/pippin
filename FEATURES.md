@@ -42,7 +42,9 @@ features use any OpenAI-compatible model you point them at (ideally a local one,
 - ✅ Deterministic crisis screen (code, not the model) with fixed helplines and a personal safety plan; works offline
 - ✅ Conversations encrypted at rest (AES-256-GCM), auto-deleted after 60 days (configurable)
 - ✅ Warns you if the coach endpoint isn't local
-- 🧪 Red-team suite of 16 safety probes (`scripts/redteam.js`)
+- ✅ Personality presets (warm, straight-talking, upbeat, calm and minimal, playful) and your own instructions, encrypted; safety rules always win
+- ✅ Health library: tick NHS website pages (ADHD, mental health, sleep, alcohol and addiction, activity, ADHD medicines) for the coach to look things up in; local keyword search, exact NHS text shown with attribution, link and date; doses never indexed
+- 🧪 Red-team suite of 20 safety probes (`scripts/redteam.js`)
 - 🔌 Local voice: Whisper speech-to-text, Kokoro/Piper text-to-speech
 - 🔌 Approved memories written to an Obsidian folder (nothing is written without your tap)
 - 🔌 People: relationship nudges from contact **metadata only** (who/when, never message text) — WhatsApp/Facebook export importer, optional live WhatsApp link

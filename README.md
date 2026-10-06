@@ -31,6 +31,9 @@ you were away. Around it:
 - **A private ADHD coach** that makes if-then plans, breaks tasks into two-minute steps, keeps one inbox and nudges
   you at the right moment. Run it on **your own model (Ollama)** or bring an API key for **ChatGPT, Claude, Gemini
   or OpenRouter**. Crisis handling is code, not a prompt.
+- **Make the coach yours:** pick its personality and give it your own instructions. Tick the **NHS website pages**
+  it can look things up in, so health facts come from the NHS rather than the model's memory, shown word for word
+  with a link.
 - **Habits** scored on strength rather than streaks. A missed day dents the score; it doesn't wipe your progress.
 - **A sobriety tracker** for alcohol and 21 other substances and behaviours. The headline number is *total free
   days*, which never goes down. A slip opens a short debrief, not a reset.
@@ -94,7 +97,8 @@ The short version. The full list is in [FEATURES.md](FEATURES.md).
 | 🌱 **Companion** | Hatch and name a sprig; 5 growth stages; adventures with stories; outfits, furniture and room themes; seasonal events; it never decays |
 | 🔗 **Agent-linked goals** | Goals your own agent checks and ticks: money, email, calendar, sleep, steps, whatever its tools can read; "plan my day" from your real calendar and inbox |
 | ✅ **Goals and check-ins** | Tiny self-care goals with two-minute first steps; morning and evening mood check-ins; insights on what lifts your mood |
-| 💬 **Coach** | Morning plan, evening debrief, weekly review, can't-start, thought check, before-a-hard-thing, pause-before-acting; if-then plans with nudges; one inbox; local voice |
+| 💬 **Coach** | Morning plan, evening debrief, weekly review, can't-start, thought check, before-a-hard-thing, pause-before-acting; if-then plans with nudges; one inbox; local voice; your choice of personality and your own instructions |
+| 📘 **Health library** | 22 NHS website pages on ADHD, mental health, sleep, alcohol and addiction, activity and ADHD medicines; tick the ones your coach may use; searched on your server; exact NHS text shown with a link and date |
 | 🔁 **Habits** | "After I…, I will…" habits; X days a week; habit strength (Loop formula); Done / Mini / Rest day from the notification; max 3 building at once |
 | 🌊 **Quitting** | 22 categories; total free days that never go down; lapse debrief; urge surfing; event plans; money and units saved; per-substance safety rules and UK helplines |
 | 📋 **Check-ins for your GP** | Monthly GAD-7, PHQ-9 and WHO-5 with trends; a PDF report where you choose the period and sections |
@@ -284,7 +288,8 @@ claim it before you do.
 git pull
 docker compose up -d --build                      # or: npm install --omit=dev && sudo systemctl restart pippin
 ```
-Database changes apply automatically on start.
+Database changes apply automatically on start. To refresh the NHS pages in the health library, see
+[library/README.md](library/README.md).
 
 **Back up** two things:
 - **The database:** `docker compose exec db pg_dump -U pippin pippin > pippin-$(date +%F).sql`
@@ -342,6 +347,19 @@ No. You can use your own ChatGPT, Claude, Gemini or OpenRouter API key instead. 
 private, a local model through Ollama works, and 8B models run on many ordinary machines. See
 [Choosing an AI](#choosing-an-ai).
 
+**Can I change how the coach talks?**
+Yes. In *Me → Coach style & library* you can pick a personality (warm and gentle, straight-talking, upbeat, calm
+and minimal, or playful) and write your own instructions, such as what to call you, how long replies should be, or
+what doesn't work for you. Your instructions are encrypted. They can't switch off the coach's safety rules, and the
+red-team suite checks that.
+
+**Where does the coach get its health information from?**
+From NHS website pages you choose. The [health library](library/README.md) has 22 pages on ADHD, mental health,
+sleep, alcohol and addiction, activity and ADHD medicines. You tick the ones your coach may use, it searches them on
+your own server, and when it uses one you see the exact NHS text under its reply with a link to the page. Dose
+information is left out, and the coach still won't advise on medication. NICE guidance isn't included, because
+NICE needs to approve its use with AI.
+
 **Do I need an AI agent like Hermes?**
 No. Without one, Pippin is still the full companion: the pet, goals, habits, coach, sobriety tracker and check-ins.
 The agent is an optional extra that lets goals tick themselves from your real email, calendar, bank and health data.
@@ -375,11 +393,16 @@ No. It's a self-help wellbeing tool for adults, not a medical device. If you're 
 The crisis helplines are at the [top of this page](#pippin-).
 
 ## Status
-Version 0.10 is an early public release, by one person. Everything listed works, but read
+Version 0.11 is an early public release, by one person. Everything listed works, but read
 [docs/KNOWN_ISSUES.md](docs/KNOWN_ISSUES.md) before relying on it, and see the [roadmap](ROADMAP.md) and
 [changelog](CHANGELOG.md).
 
 UK-first: helplines, units and guidance are British. Country packs are welcome contributions.
+
+## Acknowledgements
+Information from the NHS website is licensed under the
+[Open Government Licence v3.0](https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/).
+See [library/README.md](library/README.md).
 
 ## Contributing
 Bug reports, safety reports and small PRs are very welcome. Start with [CONTRIBUTING.md](CONTRIBUTING.md) and

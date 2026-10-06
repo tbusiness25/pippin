@@ -1,0 +1,40 @@
+{
+  "_about": "Pages the coach's health library is built from. Edit this list, then run: node scripts/update-library.js",
+  "groups": {
+    "adhd": "ADHD",
+    "mental-health": "Mental health and wellbeing",
+    "sleep": "Sleep and energy",
+    "alcohol-addiction": "Alcohol, drugs and gambling",
+    "activity": "Physical activity",
+    "medicines": "ADHD medicines (no dose information)"
+  },
+  "sources": [
+    { "id": "adhd-adults", "group": "adhd", "url": "https://www.nhs.uk/conditions/adhd-adults/" },
+    { "id": "adhd-children", "group": "adhd", "url": "https://www.nhs.uk/conditions/adhd-children-teenagers/" },
+
+    { "id": "depression", "group": "mental-health", "url": "https://www.nhs.uk/mental-health/conditions/depression-in-adults/" },
+    { "id": "anxiety", "group": "mental-health", "url": "https://www.nhs.uk/mental-health/conditions/generalised-anxiety-disorder-gad/" },
+    { "id": "stress", "group": "mental-health", "url": "https://www.nhs.uk/mental-health/feelings-symptoms-behaviours/feelings-and-symptoms/stress/" },
+    { "id": "anger", "group": "mental-health", "url": "https://www.nhs.uk/mental-health/feelings-symptoms-behaviours/feelings-and-symptoms/anger/" },
+    { "id": "five-steps", "group": "mental-health", "url": "https://www.nhs.uk/mental-health/self-help/guides-tools-and-activities/five-steps-to-mental-wellbeing/" },
+    { "id": "talking-therapies", "group": "mental-health", "url": "https://www.nhs.uk/tests-and-treatments/talking-therapies/" },
+    { "id": "cbt", "group": "mental-health", "url": "https://www.nhs.uk/tests-and-treatments/cognitive-behavioural-therapy-cbt/" },
+    { "id": "urgent-help", "group": "mental-health", "url": "https://www.nhs.uk/nhs-services/mental-health-services/where-to-get-urgent-help-for-mental-health/" },
+
+    { "id": "insomnia", "group": "sleep", "url": "https://www.nhs.uk/conditions/insomnia/" },
+    { "id": "tiredness", "group": "sleep", "url": "https://www.nhs.uk/symptoms/tiredness-and-fatigue/" },
+
+    { "id": "alcohol-support", "group": "alcohol-addiction", "url": "https://www.nhs.uk/live-well/alcohol-advice/alcohol-support/" },
+    { "id": "alcohol-units", "group": "alcohol-addiction", "url": "https://www.nhs.uk/live-well/alcohol-advice/calculating-alcohol-units/" },
+    { "id": "alcohol-cutting-down", "group": "alcohol-addiction", "url": "https://www.nhs.uk/live-well/alcohol-advice/tips-on-cutting-down-alcohol/" },
+    { "id": "alcohol-risks", "group": "alcohol-addiction", "url": "https://www.nhs.uk/live-well/alcohol-advice/the-risks-of-drinking-too-much/" },
+    { "id": "alcohol-misuse", "group": "alcohol-addiction", "url": "https://www.nhs.uk/conditions/alcohol-use-disorder/" },
+    { "id": "drug-addiction", "group": "alcohol-addiction", "url": "https://www.nhs.uk/live-well/addiction-support/drug-addiction-getting-help/" },
+    { "id": "gambling", "group": "alcohol-addiction", "url": "https://www.nhs.uk/live-well/addiction-support/gambling-addiction/" },
+
+    { "id": "activity-adults", "group": "activity", "url": "https://www.nhs.uk/live-well/exercise/physical-activity-guidelines-for-adults-aged-19-to-64/" },
+    { "id": "exercise-depression", "group": "activity", "url": "https://www.nhs.uk/mental-health/self-help/guides-tools-and-activities/exercise-for-depression/" },
+
+    { "id": "methylphenidate", "group": "medicines", "url": "https://www.nhs.uk/medicines/methylphenidate-adults/" }
+  ]
+}

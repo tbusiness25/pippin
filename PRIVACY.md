@@ -16,6 +16,7 @@ key only your server holds. Coach conversations are deleted after 60 days by def
 | Your agent (`BRAIN=hermes` / `agent`) | The goal-check question, the date and time; for "plan my day" your mood/energy and today's goal titles — never chats, journal, sobriety or questionnaire data | The agent you run. What *it* reads (email, bank, health) is under its own permissions |
 | Fitness add-on | Garmin: your Garmin sign-in (once) and the sync requests; food search terms to Open Food Facts; exercise search to the open exercise database | Garmin, openfoodfacts.org, the exercise database. Your diary, workouts and health data stay in the fitness database on your server |
 | Web Push nudges | A short, discreet notification ("Time for a small step") — never health details | Your browser vendor's push service (Google, Apple, Mozilla) |
+| Health library | Nothing. The NHS pages are copied into the app when it's built (or when you run `scripts/update-library.js`, which only downloads from nhs.uk) and searched on your server | — |
 | Live WhatsApp link | Nothing is sent; it **reads** who messaged whom and when (never content) | — |
 
 ## If you run it for other people

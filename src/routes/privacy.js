@@ -32,6 +32,7 @@ router.get('/export', async (req, res) => {
   const data = {
     exported_at: new Date().toISOString(),
     profile: await engine.profileOf(req.uid),
+    coach_settings: await require('../coach/style').get(req.uid),
     coach_messages: msgs.map((m) => { try { return { ...m, body_enc: undefined, body: decrypt(m.body_enc) }; } catch { return null; } }).filter(Boolean),
     commitments: await q('SELECT * FROM commitments WHERE user_id=$1'),
     inbox: await q('SELECT * FROM inbox_items WHERE user_id=$1'),

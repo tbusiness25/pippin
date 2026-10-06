@@ -9,11 +9,27 @@ const crisis = require('./crisis');
 const tools = require('./tools');
 const people = require('./people');
 const vault = require('./vault');
+const style = require('./style');
+const library = require('./library');
 const { encrypt, decrypt } = require('./crypto');
 const { PERSONA, FLOWS } = require('./prompt');
 
 const HISTORY = 16;
 const MAX_TOOL_ROUNDS = 4;
+const LOOKUP = { type: 'function', function: { name: 'look_up_health_info',
+  description: 'Search the NHS website pages they chose for their health library. Use it for health facts: symptoms, getting a diagnosis, treatments, side effects, alcohol units, sleep, support services.',
+  parameters: { type: 'object', properties: { query: { type: 'string', description: 'What to look up, in plain words' } }, required: ['query'] } } };
+const LIBRARY_RULES = `HEALTH LIBRARY
+- They've chosen pages from the NHS website for you to use. For health facts (symptoms, diagnosis, treatments, side effects,
+  alcohol units, sleep, where to get help) rely on these passages, not your own memory; look things up with look_up_health_info.
+- Say it briefly in your own words. The passages are already shown to them under your reply with a link, so say "the NHS page
+  below has more" — never offer to look it up or pull it up for them.
+  Don't claim the NHS says anything that isn't in a passage. If the pages don't cover it, say so and suggest their GP or pharmacist.
+- The library never changes your LIMITS: still no doses, no stopping or swapping medicines, no diagnosing.`;
+const addSources = (out, hits) => {
+  for (const h of hits) if (!out.sources.some((x) => x.source === h.source && x.heading === h.heading)) out.sources.push(h);
+};
+
 const CLAIM = /\b(i'?ve|i have|i'?ll|i will|i’ve|i’ll)\s+(just\s+)?(saved|save|added|add|set|scheduled|booked|logged|noted|put)\b|\b(saved|added)\s+(it|that|this|your)\b|\bnudge (is )?set\b/i;
 
 async function profileOf(uid) {
@@ -76,13 +92,14 @@ async function history(uid) {
   return rows.map((r) => { try { return { role: r.role, content: decrypt(r.body_enc) }; } catch { return null; } }).filter(Boolean);
 }
 
-async function store(uid, role, text, flow) {
-  await pool.query('INSERT INTO coach_messages(user_id, role, body_enc, flow) VALUES ($1,$2,$3,$4)', [uid, role, encrypt(text), flow || null]);
+async function store(uid, role, text, flow, sources) {
+  const refs = sources?.length ? JSON.stringify(sources.map((s) => ({ source: s.source, heading: s.heading }))) : null;
+  await pool.query('INSERT INTO coach_messages(user_id, role, body_enc, flow, sources) VALUES ($1,$2,$3,$4,$5)', [uid, role, encrypt(text), flow || null, refs]);
 }
 
 /** Run one turn. Either `text` (the person typed/spoke) or `flow` (they tapped a guided flow). */
 async function turn(uid, { text, flow }) {
-  const out = { reply: '', crisis: null, actions: [] };
+  const out = { reply: '', crisis: null, actions: [], sources: [] };
   const userText = String(text || '').trim();
   const level = userText ? crisis.screen(userText) : null;
   if (level) {
@@ -91,7 +108,22 @@ async function turn(uid, { text, flow }) {
   }
   const ctx = await context(uid);
   const name = ctx.user.name || 'the person';
-  const sys = [PERSONA(name, ctx.pet?.name), `\nCONTEXT\n${ctx.text}`];
+  const prefs = await style.get(uid);
+  const urgent = level === 'high' || level === 'medical';
+  const sys = [PERSONA(name, ctx.pet?.name)];
+  if (prefs.library.length) sys.push(`\n${LIBRARY_RULES}`);
+  sys.push(`\nCONTEXT\n${ctx.text}`);
+  // Automatic look-up when they mention a health topic, so even models that skip tool calls get the facts.
+  if (prefs.library.length && userText && !urgent && library.onTopic(userText)) {
+    const hits = library.search(userText, prefs.library, { k: 2, minScore: 2 });
+    if (hits.length) {
+      addSources(out, hits);
+      sys.push(`\nNHS PASSAGES FOR THIS MESSAGE (they'll see these under your reply)\n${hits.map((h) => `[${h.title} — ${h.heading}]\n${h.text}`).join('\n\n')}`);
+    }
+  }
+  // Their style goes last so the model actually follows it; the block itself says the rules above still win.
+  const prefBlock = style.promptBlock(name, prefs);
+  if (prefBlock && !urgent) sys.push(prefBlock);
   if (level) sys.push(`\n${crisis.MODEL_GUIDANCE[level]}`);
   const safety = (ctx.user.settings || {}).safety_plan;
   if (level && safety?.person) sys.push(`Their safety plan names ${safety.person} as someone to contact.`);
@@ -110,14 +142,21 @@ async function turn(uid, { text, flow }) {
   }
 
   for (let round = 0; round <= MAX_TOOL_ROUNDS; round++) {
-    const m = await llm.chat(msgs, { tools: level === 'high' || level === 'medical' ? [] : tools.DEFS });
+    const m = await llm.chat(msgs, { tools: urgent ? [] : prefs.library.length ? [...tools.DEFS, LOOKUP] : tools.DEFS });
     if (m.tool_calls?.length && round < MAX_TOOL_ROUNDS) {
       msgs.push({ role: 'assistant', content: m.content || '', tool_calls: m.tool_calls });
       for (const tc of m.tool_calls) {
         let args = {};
         try { args = JSON.parse(tc.function.arguments || '{}'); } catch (_) {}
         let result;
-        try { result = await tools.run(uid, tc.function.name, args, out); }
+        try {
+          if (tc.function.name === 'look_up_health_info') {
+            const hits = prefs.library.length ? library.search(String(args.query || userText), prefs.library, { k: 3 }) : [];
+            addSources(out, hits);
+            result = hits.length ? { passages: hits.map((h) => ({ page: h.title, section: h.heading, text: h.text })) }
+              : { found: false, note: 'Nothing in their chosen NHS pages covers this.' };
+          } else result = await tools.run(uid, tc.function.name, args, out);
+        }
         catch (e) { result = { error: 'tool failed' }; console.warn('[coach tool]', tc.function.name, e.message); }
         msgs.push({ role: 'tool', tool_call_id: tc.id, content: JSON.stringify(result) });
       }
@@ -134,7 +173,7 @@ async function turn(uid, { text, flow }) {
     break;
   }
   delete out._rechecked;
-  await store(uid, 'assistant', out.reply, flow);
+  await store(uid, 'assistant', out.reply, flow, out.sources);
   if (out.actions.some((a) => a.type === 'commitment' || a.type === 'inbox')) vault.syncPlans(uid).catch(() => {});
   return out;
 }

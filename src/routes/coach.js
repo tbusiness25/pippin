@@ -79,10 +79,24 @@ module.exports = (brain) => {
     flows: Object.entries(engine.FLOWS).map(([id, f]) => ({ id, label: f.label })),
     voice: !!(process.env.WHISPER_URL && process.env.TTS_URL), retentionDays: parseInt(process.env.COACH_RETENTION_DAYS || '60', 10) }));
 
+  // How the coach sounds, and which NHS pages it may use.
+  const style = require('../coach/style');
+  const library = require('../coach/library');
+  router.get('/settings', async (req, res) => {
+    const { groups, sources } = library.sources();
+    res.json({ ok: true, ...(await style.get(req.uid)), maxInstructions: style.MAX_INSTRUCTIONS,
+      personalities: Object.entries(style.PERSONALITIES).map(([id, p]) => ({ id, label: p.label, hint: p.hint })),
+      groups, sources: sources.map((s) => ({ ...s, attribution: library.attribution(s) })), licence: library.LICENCE_NOTE });
+  });
+  router.post('/settings', async (req, res) => res.json({ ok: true, ...(await style.save(req.uid, req.body)) }));
+
   router.get('/messages', async (req, res) => {
     const { rows } = await pool.query(
-      `SELECT role, body_enc, flow, created_at FROM (SELECT * FROM coach_messages WHERE user_id=$1 AND thread_id IS NULL ORDER BY id DESC LIMIT 60) m ORDER BY id`, [req.uid]);
-    res.json({ ok: true, messages: rows.map((r) => { try { return { role: r.role, content: decrypt(r.body_enc), flow: r.flow, created_at: r.created_at }; } catch { return null; } }).filter(Boolean) });
+      `SELECT role, body_enc, flow, sources, created_at FROM (SELECT * FROM coach_messages WHERE user_id=$1 AND thread_id IS NULL ORDER BY id DESC LIMIT 60) m ORDER BY id`, [req.uid]);
+    res.json({ ok: true, messages: rows.map((r) => { try {
+      return { role: r.role, content: decrypt(r.body_enc), flow: r.flow, created_at: r.created_at,
+        sources: (r.sources || []).map((ref) => library.find(ref)).filter(Boolean) };
+    } catch { return null; } }).filter(Boolean) });
   });
 
   async function respond(req, res, input) {

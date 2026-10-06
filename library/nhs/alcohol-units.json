@@ -1,0 +1,27 @@
+{
+  "id": "alcohol-units",
+  "group": "alcohol-addiction",
+  "title": "Alcohol units",
+  "url": "https://www.nhs.uk/live-well/alcohol-advice/calculating-alcohol-units/",
+  "publisher": "NHS website",
+  "licence": "Open Government Licence v3.0",
+  "copied_on": "2026-10-06",
+  "last_reviewed": "2024-08-27",
+  "sections": [
+    {
+      "heading": "Overview",
+      "sub": "",
+      "text": "We're supposed to be keeping an eye on how much we drink, but how many of us really know what a unit of alcohol is?\nWith so many different drinks and glass sizes, from shots to pints – not to mention bottles – it's easy to get confused about how many units are in your drink.\nThe idea of counting alcohol units was first introduced in the UK in 1987 to help people keep track of their drinking.\nUnits are a simple way of expressing the quantity of pure alcohol in a drink.\nOne unit equals 10ml or 8g of pure alcohol, which is around the amount of alcohol the average adult can process in an hour.\nThis means that within an hour there should be, in theory, little or no alcohol left in the blood of an adult, although this will vary from person to person.\nThe number of units in a drink is based on the size of the drink, as well as its alcohol strength.\nFor example, a pint of strong lager contains 3 units of alcohol, whereas the same volume of lower-strength lager has just over 2 units.\nKnowing your units will help you stay in control of your drinking.\nTo keep health risks from alcohol to a low level if you drink most weeks:\n\n- men and women are advised not to drink more than 14 units a week on a regular basis\n- spread your drinking over 3 or more days if you regularly drink as much as 14 units a week\n- if you want to cut down, try to have several drink-free days each week\n14 units is equivalent to 6 pints of average-strength beer or 10 small glasses of lower-strength wine."
+    },
+    {
+      "heading": "Calculating units",
+      "sub": "",
+      "text": "Using units is a simpler way of representing a drink's alcohol content – usually expressed by the standard measure alcohol by volume (ABV).\nABV is a measure of the amount of pure alcohol as a percentage of the total volume of liquid in a drink.\nYou can find the ABV on the labels of cans and bottles, sometimes written as \"vol\" or \"alcohol volume\", or you can ask bar staff about particular drinks.\nFor example, wine that says \"12% ABV\" or \"alcohol volume 12%\" means 12% of the volume of that drink is pure alcohol.\nYou can work out how many units there are in any drink by multiplying the total volume of a drink (in ml) by its ABV (measured as a percentage) and dividing the result by 1,000.\n\n- strength (ABV) x volume (ml) ÷ 1,000 = units\nFor example, to work out the number of units in a pint (568ml) of strong lager (ABV 5.2%):\n\n- 5.2 (%) x 568 (ml) ÷ 1,000 = 2.95 units\nFor a quicker method, use Alcohol Change UK's unit calculator."
+    },
+    {
+      "heading": "Drinks and units",
+      "sub": "",
+      "text": "A 750ml bottle of red, white or rosé wine (ABV 13.5%) contains 10 units.\nThis guide shows how many units on average are in your favourite drink.\n\nUnits of alcohol in drinks\n\nType of drink\n|\n\nNumber of alcohol units\n|\n\nSingle small shot of spirits* (25ml, ABV 40%)\n\n|\n\n1 unit\n\n|\n\nAlcopop (275ml, ABV 4.6%)\n\n|\n\n1.3 units\n\n|\n\nSmall glass of red/white/rosé wine (125ml, ABV 12%)\n\n|\n\n1.5 units\n\n|\n\nBottle of lager/beer/cider (330ml, ABV 5%)\n\n|\n\n1.7 units\n\n|\n\nCan of lager/beer/cider (440ml, ABV 5.5%)\n\n|\n\n2.4 units\n\n|\n\nPint of lower-strength lager/beer/cider (ABV 3.6%)\n\n|\n\n2 units\n\n|\n\nStandard glass of red/white/rosé wine (175ml, ABV 12%)\n\n|\n\n2.1 units\n\n|\n\nPint of higher-strength lager/beer/cider (ABV 5.2%)\n\n|\n\n3 units\n\n|\n\nLarge glass of red/white/rosé wine (250ml, ABV 12%)\n\n|\n\n3 units\n\n|\n\n*Gin, rum, vodka, whisky, tequila and sambuca. Large (35ml) single measures of spirits are 1.4 units."
+    }
+  ]
+}
