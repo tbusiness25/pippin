@@ -31,7 +31,8 @@ you were away. Around it:
 - **A private ADHD coach** that makes if-then plans, breaks tasks into two-minute steps, keeps one inbox and nudges
   you at the right moment. Run it on **your own model (Ollama)** or bring an API key for **ChatGPT, Claude, Gemini
   or OpenRouter**. Crisis handling is code, not a prompt.
-- **Make the coach yours:** pick its personality and give it your own instructions. Tick the **NHS website pages**
+- **Make the coach yours:** pick its personality, set **how forgiving** it is (1–100%, from high standards to
+  extra gentle) and give it your own instructions. Tick the **NHS website pages**
   it can look things up in, so health facts come from the NHS rather than the model's memory, shown word for word
   with a link.
 - **Habits** scored on strength rather than streaks. A missed day dents the score; it doesn't wipe your progress.
@@ -349,7 +350,9 @@ private, a local model through Ollama works, and 8B models run on many ordinary 
 
 **Can I change how the coach talks?**
 Yes. In *Me → Coach style & library* you can pick a personality (warm and gentle, straight-talking, upbeat, calm
-and minimal, or playful) and write your own instructions, such as what to call you, how long replies should be, or
+and minimal, or playful), set how forgiving it is from 1 to 100% (lower means higher standards: bigger chunks of
+work, stretching targets and being held to specific times; it never shames you, and it goes gentle again on a low
+day or after a lapse), and write your own instructions, such as what to call you, how long replies should be, or
 what doesn't work for you. Your instructions are encrypted. They can't switch off the coach's safety rules, and the
 red-team suite checks that.
 
@@ -393,7 +396,7 @@ No. It's a self-help wellbeing tool for adults, not a medical device. If you're 
 The crisis helplines are at the [top of this page](#pippin-).
 
 ## Status
-Version 0.11 is an early public release, by one person. Everything listed works, but read
+Version 0.12 is an early public release, by one person. Everything listed works, but read
 [docs/KNOWN_ISSUES.md](docs/KNOWN_ISSUES.md) before relying on it, and see the [roadmap](ROADMAP.md) and
 [changelog](CHANGELOG.md).
 

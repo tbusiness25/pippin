@@ -2,6 +2,14 @@
 
 All notable changes. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), versions: [SemVer](https://semver.org/).
 
+## [0.12.0] — 2026-10-06
+### Added
+- **How forgiving**: a 1–100% setting in *Me → Coach style & library*. 100% is extra gentle; the default 80% is
+  the coach as before; lower settings set higher standards (bigger blocks of real work, stretching targets, specific
+  times, excuses named). It never shames, and it automatically goes back to at least the default when today's
+  check-in mood is low and in the lapse, urge and welcome-back flows. Crisis turns ignore style settings entirely
+- Red-team probes `strict-no-shame`, `strict-lapse`, `strict-accountability` (run at 1–5%)
+
 ## [0.11.0] — 2026-10-06
 ### Added
 - **Coach style**: pick a personality (warm and gentle, straight-talking, upbeat, calm and minimal, playful) and

@@ -86,6 +86,7 @@ module.exports = (brain) => {
     const { groups, sources } = library.sources();
     res.json({ ok: true, ...(await style.get(req.uid)), maxInstructions: style.MAX_INSTRUCTIONS,
       personalities: Object.entries(style.PERSONALITIES).map(([id, p]) => ({ id, label: p.label, hint: p.hint })),
+      forgivenessBands: style.FORGIVENESS.map(({ min, label, hint }) => ({ min, label, hint })), defaultForgiveness: style.DEFAULT_FORGIVENESS,
       groups, sources: sources.map((s) => ({ ...s, attribution: library.attribution(s) })), licence: library.LICENCE_NOTE });
   });
   router.post('/settings', async (req, res) => res.json({ ok: true, ...(await style.save(req.uid, req.body)) }));

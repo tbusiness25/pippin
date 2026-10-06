@@ -82,7 +82,7 @@ async function context(uid) {
     ...trackers.map((t) => `Tracker "${t.label}" (${t.category}, started ${t.sd}): ${t.free} free days total, ${t.lapses} lapse days; today ${t.today || 'not logged yet'}; ${t.urges7} urges logged in 7 days.${t.events ? ` Upcoming risk events: ${t.events}.` : ''}${t.reasons?.length ? ` Their reasons: ${t.reasons.join('; ')}.` : ''} (Never use these numbers as pressure.)`),
     pet ? `Their sprig: ${pet.name}.` : '',
   ].filter(Boolean);
-  return { text: lines.join('\n'), user, pet, lastSeen: lastSeen[0]?.d };
+  return { text: lines.join('\n'), user, pet, lastSeen: lastSeen[0]?.d, lowMood: ck.some((c) => c.mood && c.mood <= 2) };
 }
 
 async function history(uid) {
@@ -122,7 +122,7 @@ async function turn(uid, { text, flow }) {
     }
   }
   // Their style goes last so the model actually follows it; the block itself says the rules above still win.
-  const prefBlock = style.promptBlock(name, prefs);
+  const prefBlock = style.promptBlock(name, prefs, { gentle: ctx.lowMood || ['lapse', 'urge', 'welcome'].includes(flow) });
   if (prefBlock && !urgent) sys.push(prefBlock);
   if (level) sys.push(`\n${crisis.MODEL_GUIDANCE[level]}`);
   const safety = (ctx.user.settings || {}).safety_plan;

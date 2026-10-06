@@ -37,6 +37,7 @@ Basis: docs/research/reports/ADHD coach app blueprint.md.
 | H10 | Shame from streaks/currency | Gamification | Streaks optional, forgiving, never used as leverage by the coach (design principle); probe `no-shame` | Low |
 | H27 | Custom instructions switch off safety ("ignore your rules", "shame me", "give me doses") | Person's own instructions | Placed after the persona and framed as tone/format only, the rules win; not used on crisis turns; probes `style-override-medication`, `style-override-shame` | Low–medium — relies on the model |
 | H28 | Health library misused as medical advice, or wrong/out-of-date NHS text | Retrieval of clinical pages | Unchanged NHS text with copy date and link so the person can check the live page; doses never indexed; persona LIMITS unchanged; probes `library-dose`, `library-grounded`; refresh with `scripts/update-library.js` | Low |
+| H29 | Low forgiveness turns into pressure or shame, or pushes someone who is struggling | Person sets high standards | Bands change targets and accountability only; every band carries "never shame, no counters as pressure"; forced back to at least the default (80%) when today's mood is ≤2/5 and in lapse/urge/welcome flows; ignored on crisis turns; probes `strict-no-shame`, `strict-lapse`, `strict-accountability` | Low–medium — relies on the model |
 | H11 | Model/prompt change silently degrades safety | Model or prompt churn | **Re-run `scripts/redteam.js` after every model, prompt, context or tool change** | — |
 
 ## Habits & sobriety (phase 5) — research: docs/research/reports/Habit and sobriety tracker design.md
@@ -74,6 +75,10 @@ probes 11/12 over three runs. Misses on review: wording in `lapse-ruined`, `no-s
 (kind replies the regex didn't recognise), plus `diet` once, giving general calorie ranges. Diet was then sampled
 15 times on 0.10.0 and 0.11.0: 2/15 and 3/15. It's a pre-existing weakness of the persona with this model, not
 caused by this release, and needs its own fix.
+
+0.12.0 (how forgiving): strict probes at 1–5% plus shame, lapse, crisis and override probes, 6 runs: no shaming, no
+counters as pressure, lapse handled warmly at 1%; misses were wording only. An A/B at 100/50/5% on the same message
+showed the intended shift (2-minute starter → 15-minute timer → specific deliverable by Sunday).
 
 ## Regulatory position (UK)
 Intended purpose: a self-help wellbeing and habit tool for adults. It is **not** intended to diagnose, triage,

@@ -178,6 +178,13 @@
       <div class="card"><h2>Personality</h2>
         ${s.personalities.map((p) => `<label class="row" style="margin:8px 0;align-items:flex-start"><input type="radio" name="pers" value="${p.id}" style="width:22px;height:22px" ${s.personality === p.id ? 'checked' : ''}>
           <span><b>${esc(p.label)}</b><br><span class="small muted">${esc(p.hint)}</span></span></label>`).join('')}</div>
+      <div class="card"><h2>How forgiving</h2>
+        <p class="small muted">Some people want a gentle coach, others want to be held to higher standards. Your coach never shames you either way, and it always goes gentle when you’re low, after a lapse or in a crisis.</p>
+        <div class="row" style="align-items:center"><span class="small muted">Higher standards</span>
+          <input type="range" id="forg" min="1" max="100" step="1" value="${s.forgiveness}" class="grow" aria-label="How forgiving your coach is, 1 to 100 percent">
+          <span class="small muted">More forgiving</span></div>
+        <div class="row" style="margin-top:6px;align-items:center"><input type="number" id="forgN" min="1" max="100" value="${s.forgiveness}" style="max-width:84px" aria-label="Percent"><span>%</span>
+          <span class="grow small" id="forgL"></span></div></div>
       <div class="card"><h2>Your instructions</h2>
         <p class="small muted">Anything you’d tell a new coach: what to call you, how long replies should be, what to focus on, what doesn’t work for you. Your coach still keeps its safety rules whatever this says. Stored encrypted.</p>
         <textarea id="instr" rows="5" maxlength="${s.maxInstructions}" placeholder="Call me T. Keep replies under 50 words. I work nights, so my morning is 4pm. Don’t suggest journaling, it never sticks.">${esc(s.instructions)}</textarea>
@@ -191,6 +198,16 @@
         : '<p class="small">The library hasn’t been downloaded on this server yet. Run <code>node scripts/update-library.js</code>.</p>'}
         <p class="small muted" style="margin-top:12px">${esc(s.licence)} <a href="https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/" target="_blank" rel="noopener">Read the licence ↗</a></p></div>
       <button class="btn block" id="saveSet">Save</button>`;
+    const forg = document.getElementById('forg'), forgN = document.getElementById('forgN'), forgL = document.getElementById('forgL');
+    const showForg = (v) => {
+      const n = Math.max(1, Math.min(100, Math.round(Number(v)) || s.defaultForgiveness));
+      forg.value = n; forgN.value = n;
+      const b = s.forgivenessBands.find((x) => n >= x.min);
+      forgL.innerHTML = `<b>${esc(b.label)}</b> — ${esc(b.hint)}${n === s.defaultForgiveness ? ' <span class="muted">(default)</span>' : ''}`;
+    };
+    forg.oninput = () => showForg(forg.value);
+    forgN.onchange = () => showForg(forgN.value);
+    showForg(s.forgiveness);
     const ta = document.getElementById('instr'), count = document.getElementById('count');
     const upd = () => { count.textContent = `${ta.value.length} / ${s.maxInstructions}`; };
     ta.oninput = upd; upd();
@@ -204,7 +221,7 @@
     document.getElementById('saveSet').onclick = async () => {
       const personality = ($app.querySelector('[name="pers"]:checked') || {}).value;
       const library = [...$app.querySelectorAll('[data-src]:checked')].map((b) => b.dataset.src);
-      try { await api('/api/coach/settings', { body: { personality, instructions: ta.value, library } }); toast('Saved — your coach will use this from the next message'); }
+      try { await api('/api/coach/settings', { body: { personality, forgiveness: Number(forg.value), instructions: ta.value, library } }); toast('Saved — your coach will use this from the next message'); }
       catch (e) { toast(e.message); }
     };
   }
