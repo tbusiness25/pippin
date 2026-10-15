@@ -48,3 +48,16 @@
 .ky-part .ok { color: var(--moss-deep); font-weight: 700; }
 .ky-part .bad { color: var(--danger); font-weight: 700; }
 .fld { display: flex; flex-direction: column; gap: 4px; margin: 8px 0; }
+
+/* Cards and buttons get their own colours, so text stays readable whatever the page theme is. */
+.kj-job { background: #fffdf8; color: #2f2d29; }
+.kj-job .kj-title { color: #2f2d29; }
+.kj-job .kj-detail { color: #6b655b; }
+.kj-starbar { display: flex; align-items: center; gap: 8px; color: #efeae0; text-decoration: none; font-size: 1.05rem; padding: 8px 4px; }
+.kj-bigstar { font-size: 1.4rem; }
+.kj-chore { width: 100%; display: flex; align-items: center; gap: 12px; text-align: left; background: #fffdf8; color: #2f2d29; border: 0; border-radius: 14px; padding: 12px 14px; font: inherit; box-shadow: 0 1px 3px rgba(0,0,0,.25); cursor: pointer; }
+.kj-chore.done { opacity: .55; cursor: default; }
+.kj-ic { font-size: 1.6rem; width: 2.2rem; text-align: center; flex: none; }
+.kj-txt { display: flex; flex-direction: column; flex: 1; min-width: 0; color: #2f2d29; }
+.kj-txt .small { color: #6b655b; }
+.kj-stars { font-weight: 700; white-space: nowrap; color: #7a5a00; }
