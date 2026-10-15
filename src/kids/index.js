@@ -36,7 +36,8 @@ function load(dir, name) {
 async function resolveChild(req, res, next) {
   try {
     if (req.role === 'child') {
-      const { rows: [kid] } = await pool.query('SELECT id, name, tz, settings, slug FROM users WHERE id=$1', [req.uid]);
+      const { rows: [kid] } = await pool.query('SELECT id, name, tz, settings, slug FROM users WHERE id=$1 AND deleted_at IS NULL', [req.uid]);
+      if (!kid) return res.status(401).json({ ok: false, error: 'unauthorized' });   // removed by a parent
       req.kid = kid; req.asParent = false; return next();
     }
     if (!(req.role === 'adult' && req.isParent)) return res.status(403).json({ ok: false, error: 'Only parents can open a child’s things' });
