@@ -4,7 +4,9 @@
   const $app = document.getElementById('app');
   const md = (t) => esc(t).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/^\s*[*-]\s+/gm, '• ')
     .replace(/(https?:\/\/[^\s<)]+)/g, '<a href="$1" target="_blank" rel="noopener">$1</a>');
-  const modeSwitch = (on) => `<div class="row" style="margin-bottom:10px"><a class="chip ${on === 'coach' ? 'on' : ''}" href="#coach" style="text-decoration:none">💬 Coach</a><a class="chip ${on === 'chat' ? 'on' : ''}" href="#chat" style="text-decoration:none">✨ Chat</a><a class="chip" href="#voice" style="text-decoration:none">🎙️ Recordings</a></div>`;
+  // The 🤖 chip appears when this person has their own agent connected (users.brain).
+  const modeSwitch = (on) => { const ag = F.state?.brain?.chat ? `<a class="chip ${on === 'agent' ? 'on' : ''}" href="#agent" style="text-decoration:none">🤖 ${esc(F.state.brain.label)}</a>` : '';
+    return `<div class="row wrap" style="margin-bottom:10px">${ag}<a class="chip ${on === 'coach' ? 'on' : ''}" href="#coach" style="text-decoration:none">💬 Coach</a><a class="chip ${on === 'chat' ? 'on' : ''}" href="#chat" style="text-decoration:none">✨ Chat</a><a class="chip ${on === 'voice' ? 'on' : ''}" href="#voice" style="text-decoration:none">🎙️ Recordings</a></div>`; };
   F.modeSwitch = modeSwitch;
 
   // ---------- general chat ----------

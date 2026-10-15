@@ -4,7 +4,7 @@ const game = require('../game');
 const rewards = require('../rewards');
 const { COMPANIONS, activeEvent } = require('../catalog');
 
-module.exports = (brain) => {
+module.exports = (brains) => {
   const router = express.Router();
 
   const COLOURS = ['moss', 'sky', 'peach', 'lilac', 'sun', 'rose'];
@@ -13,6 +13,7 @@ module.exports = (brain) => {
   // Everything the home screen needs in one call.
   router.get('/state', async (req, res) => {
     const user = await game.getUser(req.uid);
+    const brain = await brains.forUser(req.uid);
     const pet = await game.getPet(req.uid);
     const today = game.localDay(user.tz);
     const weekday = game.localWeekday(user.tz);
@@ -69,16 +70,19 @@ module.exports = (brain) => {
       'SELECT kind, mood, energy FROM checkins WHERE user_id=$1 AND day=$2', [req.uid, today]);
     res.json({
       ok: true, today,
-      user: { name: user.name, settings: user.settings },
+      user: { id: user.id, name: user.name, settings: user.settings, role: user.role, isParent: user.is_parent, slug: user.slug },
       pet: petOut, goals,
       checkins: { morning: checkins.find((c) => c.kind === 'morning') || null,
                   evening: checkins.find((c) => c.kind === 'evening') || null },
       streak: await game.streak(req.uid),
-      brain: { name: brain.name, label: brain.label, capabilities: brain.capabilities },
+      brain: { name: brain.name, label: brain.label, capabilities: brain.capabilities, chat: !!brain.agent },
       companions: comps.map((c) => COMPANIONS.find((x) => x.id === c.companion)).filter(Boolean),
       event: ev && { ...ev, tokens: tok[0]?.tokens || 0 },
       kindnesses: kind,
       isOwner: user.is_owner,
+      isParent: !!user.is_parent,
+      members: user.is_parent ? (await require('../db').pool.query(`SELECT id, name, role FROM users WHERE deleted_at IS NULL AND id<>$1 ORDER BY created_at`, [req.uid])).rows
+        .map((m) => ({ id: m.id, name: String(m.name).trim(), role: m.role })) : [],
       lastActiveDaysAgo: act?.ago ?? null,
       plans, inboxCount: inbox.n, trackers, habitsToday,
       checksDue: (await require('./tools').checksDue(req.uid)).checks.filter((c) => c.due),
@@ -103,7 +107,7 @@ module.exports = (brain) => {
     const adv = pet && await game.currentAdventure(pet.id);
     if (!adv || new Date(adv.ends_at) > new Date()) return res.status(400).json({ ok: false, error: 'Not home yet' });
     const before = game.stageFor(pet.adventures);
-    const story = await brain.story({
+    const story = await brains.story({
       petName: pet.name, pronouns: pet.pronouns, stage: before.name, place: adv.place, traits: pet.traits,
     });
     const streak = await game.streak(req.uid);

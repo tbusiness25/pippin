@@ -2,6 +2,32 @@
 
 All notable changes. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), versions: [SemVer](https://semver.org/).
 
+## [0.14.0] — 2026-10-15
+### Added
+- **Household roles**: adults and children on one server (`users.role`, `is_parent`, `slug`). Child accounts get a
+  kid-friendly app; adult routes answer 404 for them. Parents see a Family tab with each child's panel.
+- **Per-person installs**: `HOST_USERS` ties a host name to a person: their PIN pad is preselected and the manifest,
+  title and colour become theirs. A host never signs anyone in; the PIN is always checked.
+- **Agent chat** (Talk → 🤖): talk to your own agent, streamed, with tool activity, dictation and read-aloud.
+  Hermes Agent sessions are used directly; any OpenAI-compatible agent works with threads kept here. Per-person
+  agents via `AGENT_PROFILES` and `users.brain`.
+- **Reads** (Explore → Reads): articles the server owner drops in as Markdown, with optional audio.
+- **Kids**: a home with the sprig's room and savings jars, and modules for jobs, feelings check-ins, stars and
+  rewards, pocket money with savings pots, a wish list, a listening library, a daily paper, Learn, a collection,
+  word games, room controls (a closed Home Assistant allowlist), Buddy (a safety-guarded chat with no tools or web,
+  `scripts/redteam-kids.js`), Messages to grown-ups, and typing practice.
+  Doing things grows the child's sprig (energy, acorns and earned keepsakes); rewards never touch real money.
+- **Family** tab: children's panels, a shared calendar and monitoring records.
+- Optional daily briefing and link digest, per adult (opt-in).
+- Breathwork (Explore → 🌬️): everyday slow-breathing practices, and intense practices after a safety check.
+- Integration hooks `/hooks/<slug>/…` (token, refused through a proxy) for automations and workers.
+- `EXPLORE_LINKS` for extra Explore tiles.
+### Fixed
+- Login never signs in "whoever's PIN matches first": a PIN is checked against one chosen person only.
+- Async route errors return 500 instead of crashing the server (Express 4).
+- A new service worker replaces a different app's old one on the same address at once.
+- Garmin: Sparky's hourly sync is switched on for a new link, so the watch syncs on its own.
+
 ## [0.12.1] — 2026-10-06
 ### Fixed
 - Coach no longer gives calorie or weight-loss numbers. The persona now rules out calorie figures, targets and ranges,

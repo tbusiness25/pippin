@@ -37,7 +37,7 @@ router.get('/', async (req, res) => {
      FROM goals WHERE user_id=$1 AND deleted_at IS NULL ORDER BY sort, created_at`, [req.uid]);
   const last = await checks.lastChecks(req.uid);
   for (const g of rows) g.last_check = last[g.id] || null;
-  res.json({ ok: true, goals: rows, categories: CATEGORIES, suggestions: SUGGESTIONS, agentChecks: checks.available() });
+  res.json({ ok: true, goals: rows, categories: CATEGORIES, suggestions: SUGGESTIONS, agentChecks: await checks.available(req.uid) });
 });
 
 router.post('/', async (req, res) => {
@@ -90,7 +90,7 @@ router.post('/:id/complete', async (req, res) => {
 
 // Ask the agent now (runs in the background; the screen refreshes from GET /).
 router.post('/:id/check', async (req, res) => {
-  if (!checks.available()) return res.status(400).json({ ok: false, error: 'No agent connected (BRAIN=hermes or BRAIN=agent)' });
+  if (!(await checks.available(req.uid))) return res.status(400).json({ ok: false, error: 'No agent connected (BRAIN=hermes or BRAIN=agent)' });
   const { rows } = await pool.query('SELECT id FROM goals WHERE id=$1 AND user_id=$2 AND agent_check IS NOT NULL AND deleted_at IS NULL', [req.params.id, req.uid]);
   if (!rows.length) return res.status(404).json({ ok: false });
   checks.checkNow(req.uid, req.params.id);

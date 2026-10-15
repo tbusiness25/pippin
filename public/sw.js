@@ -1,12 +1,19 @@
 // Service worker. Network-first for everything; the shell is cached so the app opens offline.
 const CACHE = 'finch-__SW_VERSION__';
-const SHELL = ['/', '/css/app.css?v=__SW_VERSION__', '/js/sprig.js?v=__SW_VERSION__', '/js/app.js?v=__SW_VERSION__', '/js/room.js?v=__SW_VERSION__', '/js/sounds.js?v=__SW_VERSION__', '/js/explore.js?v=__SW_VERSION__', '/js/shop.js?v=__SW_VERSION__', '/js/friends.js?v=__SW_VERSION__', '/js/talk.js?v=__SW_VERSION__', '/js/coach.js?v=__SW_VERSION__', '/js/life.js?v=__SW_VERSION__', '/js/habits.js?v=__SW_VERSION__', '/js/sober.js?v=__SW_VERSION__', '/js/fitness.js?v=__SW_VERSION__', '/icons/icon.svg', '/manifest.json'];
+const SHELL = ['/', '/css/app.css?v=__SW_VERSION__', '/js/sprig.js?v=__SW_VERSION__', '/js/app.js?v=__SW_VERSION__', '/js/room.js?v=__SW_VERSION__', '/js/sounds.js?v=__SW_VERSION__', '/js/explore.js?v=__SW_VERSION__', '/js/shop.js?v=__SW_VERSION__', '/js/friends.js?v=__SW_VERSION__', '/js/talk.js?v=__SW_VERSION__', '/js/coach.js?v=__SW_VERSION__', '/js/life.js?v=__SW_VERSION__', '/js/habits.js?v=__SW_VERSION__', '/js/sober.js?v=__SW_VERSION__', '/js/fitness.js?v=__SW_VERSION__', '/js/reads.js?v=__SW_VERSION__', '/icons/icon.svg', '/manifest.json'];
 
+// If this address used to serve a DIFFERENT app (its caches don't start with our prefix), take over at once
+// and reload open pages, so nobody is left stuck on the old app's cached screens.
+const OURS = (k) => k.startsWith(CACHE.replace(/[^-]*$/, ''));
+let foreign = false;
 self.addEventListener('install', (e) => {
-  e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).catch(() => {}));
+  e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).catch(() => {})
+    .then(() => caches.keys()).then((ks) => { foreign = ks.some((k) => !OURS(k)); if (foreign) return self.skipWaiting(); }));
 });
 self.addEventListener('activate', (e) => {
-  e.waitUntil(caches.keys().then((ks) => Promise.all(ks.filter((k) => k !== CACHE).map((k) => caches.delete(k)))).then(() => self.clients.claim()));
+  e.waitUntil(caches.keys().then((ks) => { foreign = foreign || ks.some((k) => !OURS(k)); return Promise.all(ks.filter((k) => k !== CACHE).map((k) => caches.delete(k))); })
+    .then(() => self.clients.claim())
+    .then(() => foreign && self.clients.matchAll({ type: 'window' }).then((ws) => ws.forEach((w) => { try { w.navigate(w.url); } catch (_) {} }))));
 });
 self.addEventListener('message', (e) => { if (e.data === 'skipWaiting') self.skipWaiting(); });
 self.addEventListener('fetch', (e) => {

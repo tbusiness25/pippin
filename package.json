@@ -1,7 +1,7 @@
 {
   "name": "pippin",
-  "version": "0.12.1",
-  "description": "Pippin — a gentle, self-hosted companion for ADHD brains, with a private AI coach, habits and a no-shame sobriety tracker",
+  "version": "0.14.0",
+  "description": "A family and kids companion for ADHD brains and the people who love them",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"

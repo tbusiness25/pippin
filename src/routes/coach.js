@@ -3,7 +3,7 @@ const { pool } = require('../db');
 const game = require('../game');
 const { CATEGORIES } = require('../brains/prompts');
 
-module.exports = (brain) => {
+module.exports = (brains) => {
   const router = express.Router();
   const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
@@ -28,6 +28,7 @@ module.exports = (brain) => {
           `SELECT title FROM goals WHERE user_id=$1 AND deleted_at IS NULL
              AND ((once_on IS NULL AND $3 = ANY(days)) OR once_on = $2)`,
           [req.uid, today, game.localWeekday(user.tz)]);
+        const brain = await brains.forUser(req.uid);
         const plan = await brain.planDay({
           today, weekday: WEEKDAYS[game.localWeekday(user.tz)],
           mood: ck[0]?.mood, energy: ck[0]?.energy, existingGoals: goals.map((g) => g.title),

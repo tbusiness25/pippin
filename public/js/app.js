@@ -10,7 +10,7 @@ window.APP = window.APP || (window.__BUILD__ && window.__BUILD__.appName) || "Ap
   // ---------- helpers ----------
   const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   // ---------- network: cache GETs for offline, queue safe writes, dedupe replays ----------
-  const CACHEABLE = /^\/api\/(auth\/status|pet\/state|habits$|sober(\/content)?$|sober\/[^/]+\/calendar|goals$|tools\/content|plans\/inbox|people$)/;
+  const CACHEABLE = /^\/api\/(auth\/status|pet\/state|habits$|sober(\/content)?$|sober\/[^/]+\/calendar|goals$|tools\/content|plans\/inbox|people$|reads(\/[a-z0-9-]+)?$)/;
   const QUEUEABLE = /^\/api\/(habits\/[^/]+\/log|sober\/[^/]+\/(day|pledge|urge|lapse)|goals\/[^/]+\/(complete|uncomplete)|plans\/inbox$|checkins$)/;
   const store = { get: (k) => { try { return JSON.parse(localStorage.getItem(k)); } catch (_) { return null; } },
     set: (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (_) {} } };
@@ -177,7 +177,7 @@ window.APP = window.APP || (window.__BUILD__ && window.__BUILD__.appName) || "Ap
     try {
       const st = await api('/api/auth/status');
       if (st.setup) return renderSetup(st.setupCode);
-      if (!st.signedIn) return renderLogin(st.people);
+      if (!st.signedIn) return renderLogin(st.people, st.hint);
       if (r === 'login') { location.hash = '#home'; return; }
       state = await api('/api/pet/state');
       if (!state.pet) return renderHatch();
@@ -209,22 +209,26 @@ window.APP = window.APP || (window.__BUILD__ && window.__BUILD__.appName) || "Ap
     };
   }
 
-  function renderLogin(people = []) {
+  function renderLogin(people = [], hint = null) {
     setTab(null);
     let pin = '';
     let who = null;
+    // On a host tied to one person, go straight to their PIN pad (with a way to switch person).
+    if (hint && !renderLogin.chosen && !renderLogin.picking) renderLogin.chosen = hint.id;
     if (people.length && !renderLogin.chosen) {
       $app.innerHTML = `<div class="stage">${Sprig.sprig({ colour: 'moss', stage: 'sprout', mood: 'happy', size: 140 })}</div>
         <h1 class="center">Who’s this?</h1><div class="grid">${people.map((p) => `<button class="tile" data-u="${p.id}"><span class="em">🌱</span><b>${esc(p.name)}</b></button>`).join('')}</div>`;
-      $app.querySelectorAll('[data-u]').forEach((b) => b.onclick = () => { renderLogin.chosen = b.dataset.u; renderLogin(people); });
+      $app.querySelectorAll('[data-u]').forEach((b) => b.onclick = () => { renderLogin.chosen = b.dataset.u; renderLogin.picking = false; renderLogin(people, hint); });
       return;
     }
     who = renderLogin.chosen || null;
+    const whoName = (people.find((p) => p.id === who) || {}).name;
     $app.innerHTML = `<div class="stage">${Sprig.sprig({ colour: 'moss', stage: 'sprout', mood: 'calm', size: 150 })}</div>
-      <h1 class="center">Welcome back</h1><div class="pin-dots" id="dots"></div>
+      <h1 class="center">${whoName ? `Hi, ${esc(whoName)}` : 'Welcome back'}</h1>${people.length > 1 ? `<p class="center small"><a href="#login" id="notme">Not ${esc(whoName || 'you')}?</a></p>` : ''}<div class="pin-dots" id="dots"></div>
       <div class="pad">${[1, 2, 3, 4, 5, 6, 7, 8, 9, '', 0, '⌫'].map((k) => `<button ${k === '' ? 'disabled style="visibility:hidden"' : ''} data-k="${k}">${k}</button>`).join('')}</div>`;
     const dots = () => { document.getElementById('dots').innerHTML = Array.from({ length: Math.max(4, pin.length) }, (_, i) => `<span class="${i < pin.length ? 'on' : ''}"></span>`).join(''); };
     dots();
+    document.getElementById('notme')?.addEventListener('click', (e) => { e.preventDefault(); renderLogin.chosen = null; renderLogin.picking = true; renderLogin(people, hint); });
     const submit = async () => {
       try { await api('/api/auth/login', { body: { pin, user_id: who } }); F_lock.rememberPin(pin); touch(); renderLogin.chosen = null; location.hash = '#home'; route(); }
       catch (e) { toast(e.message); pin = ''; dots(); }

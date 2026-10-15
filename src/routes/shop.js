@@ -23,7 +23,7 @@ router.get('/', async (req, res) => {
     acorns: pet?.acorns || 0,
     event: ev && { ...ev, tokens: tok[0]?.tokens || 0 },
     // Event items only show while their event runs (or if you already own them).
-    items: ITEMS.filter((i) => !i.event || (ev && i.event === ev.id) || mine.some((m) => m.item_id === i.id)),
+    items: ITEMS.filter((i) => ((!i.event || (ev && i.event === ev.id)) && !i.reward) || mine.some((m) => m.item_id === i.id)),
     owned: mine.map((m) => m.item_id),
     equipped: pet?.equipped || {}, home: pet?.home || {},
     companions: COMPANIONS.map((c) => ({ ...c, owned: comps.some((x) => x.companion === c.id) })),
@@ -33,6 +33,7 @@ router.get('/', async (req, res) => {
 router.post('/buy/:id', async (req, res) => {
   const it = item(req.params.id);
   if (!it) return res.status(404).json({ ok: false, error: 'No such item' });
+  if (it.reward) return res.status(400).json({ ok: false, error: 'That one is earned, not bought' });
   if ((await owned(req.uid)).some((m) => m.item_id === it.id)) return res.status(409).json({ ok: false, error: 'You already have that' });
   const client = await pool.connect();
   try {

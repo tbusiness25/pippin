@@ -3,6 +3,7 @@ const { pool } = require('../db');
 const { signSession, setSessionCookie, clearSessionCookie, hashPin, verifyPin, readSession } = require('../auth');
 
 const limit = require('../ratelimit');
+const { hintedUser } = require('../household');
 
 const router = express.Router();
 const keysFor = (req, uid) => [`ip:${req.ip}`, ...(uid ? [`u:${uid}`] : [])];
@@ -13,12 +14,14 @@ function tooMany(res, ms) {
 const validPin = (p) => typeof p === 'string' && /^\d{4,8}$/.test(p);
 
 // Tells the UI whether this is a fresh install (show setup) or needs a PIN.
+// With more than one person on this server, the PIN screen asks who you are — unless the host
+// this was opened on is tied to one person (HOST_USERS), in which case that person is preselected.
 router.get('/status', async (req, res) => {
-  const { rows } = await pool.query('SELECT id, name FROM users WHERE deleted_at IS NULL ORDER BY created_at');
+  const { rows } = await pool.query(`SELECT id, name, role FROM users WHERE deleted_at IS NULL ORDER BY created_at`);
   const sess = readSession(req);
-  // With more than one person on this server, the PIN screen first asks who you are.
+  const hint = rows.length > 1 ? await hintedUser(req).catch(() => null) : null;
   res.json({ ok: true, setup: rows.length === 0, setupCode: rows.length === 0 && !!process.env.SETUP_CODE, signedIn: !!(sess && sess.uid),
-    people: rows.length > 1 ? rows : [] });
+    people: rows.length > 1 ? rows : [], hint: hint ? { id: hint.id, name: hint.name, role: hint.role } : null });
 });
 
 // First-run only: create the single owner account.
@@ -39,20 +42,27 @@ router.post('/setup', async (req, res) => {
 
 router.post('/login', async (req, res) => {
   const { pin } = req.body || {};
-  const user_id = /^[0-9a-f-]{36}$/i.test((req.body || {}).user_id || '') ? req.body.user_id : null;
+  let user_id = /^[0-9a-f-]{36}$/i.test((req.body || {}).user_id || '') ? req.body.user_id : null;
   if (!validPin(pin)) return res.status(400).json({ ok: false, error: 'Enter your PIN' });
+  // A PIN is only ever checked against ONE person: the one chosen, else the one this host is tied to,
+  // else the only person on the server. Never "whoever's PIN happens to match first".
+  if (!user_id) {
+    const hint = await hintedUser(req).catch(() => null);
+    if (hint) user_id = hint.id;
+    else {
+      const { rows: all } = await pool.query('SELECT id FROM users WHERE deleted_at IS NULL LIMIT 2');
+      if (all.length === 1) user_id = all[0].id;
+      else return res.status(400).json({ ok: false, error: 'Choose who you are first', choose: true });
+    }
+  }
   const keys = keysFor(req, user_id);
   const wait = limit.lockedFor(keys);
   if (wait) return tooMany(res, wait);
-  const { rows } = user_id
-    ? await pool.query('SELECT id, pin_hash FROM users WHERE id=$1 AND deleted_at IS NULL', [user_id])
-    : await pool.query('SELECT id, pin_hash FROM users WHERE deleted_at IS NULL');
-  for (const u of rows) {
-    if (await verifyPin(pin, u.pin_hash)) {
-      limit.ok(keys);
-      setSessionCookie(req, res, signSession(u.id));
-      return res.json({ ok: true });
-    }
+  const { rows } = await pool.query('SELECT id, pin_hash FROM users WHERE id=$1 AND deleted_at IS NULL', [user_id]);
+  if (rows.length && await verifyPin(pin, rows[0].pin_hash)) {
+    limit.ok(keys);
+    setSessionCookie(req, res, signSession(rows[0].id));
+    return res.json({ ok: true });
   }
   limit.fail(keys);
   await new Promise((r) => setTimeout(r, 800));   // slow down guessing

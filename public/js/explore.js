@@ -4,6 +4,10 @@
   const $app = document.getElementById('app');
   let content = null;
   let cleanup = null;           // stops timers/sound when leaving a tool
+  // Other modules add adult tiles here: F.explore.tile({ href:'#briefing', emoji:'☀️', name:'Briefing', sub:'…', show: (state) => bool }).
+  F.explore = F.explore || { tiles: [] };
+  const feat = (window.__BUILD__ && window.__BUILD__.features) || {};   // which optional parts this server has
+  F.explore.tile = (t) => { F.explore.tiles = F.explore.tiles.filter((x) => x.href !== t.href).concat(t); };
   const getContent = async () => (content = content || await api('/api/tools/content'));
   window.addEventListener('hashchange', () => { if (cleanup) { cleanup(); cleanup = null; } });
 
@@ -33,9 +37,12 @@
         <p class="small muted" id="dqt" style="margin:.6em 0 0">${daily.answer == null ? 'No wrong answers.' : ''}</p></div>
       <div class="grid" style="margin-bottom:14px"><a class="tile" href="#habits"><span class="em">🔁</span><b>Habits</b><span class="small muted">Small, anchored, a few times a week</span></a>
         <a class="tile" href="#sober"><span class="em">🌱</span><b>Alcohol-free & quitting</b><span class="small muted">Count the days you keep</span></a>
-        <a class="tile" href="#fitness"><span class="em">⌚</span><b>Watch</b><span class="small muted">Sleep, HRV, stress, steps, BP</span></a>
+        ${feat.fitness !== false ? `<a class="tile" href="#fitness"><span class="em">⌚</span><b>Watch</b><span class="small muted">Sleep, HRV, stress, steps, BP</span></a>
         <a class="tile" href="#food"><span class="em">🍽️</span><b>Food</b><span class="small muted">Diary & meal plans</span></a>
-        <a class="tile" href="#workouts"><span class="em">🏋️</span><b>Workouts</b><span class="small muted">Log sets, save routines</span></a></div>
+        <a class="tile" href="#workouts"><span class="em">🏋️</span><b>Workouts</b><span class="small muted">Log sets, save routines</span></a>` : ''}
+        ${feat.reads !== false ? '<a class="tile" href="#reads"><span class="em">📚</span><b>Reads</b><span class="small muted">Articles to read or listen to</span></a>' : ''}
+        ${(F.explore.tiles || []).filter((t) => !t.show || t.show(F.state)).map((t) => `<a class="tile" href="${esc(t.href)}"><span class="em">${esc(t.emoji)}</span><b>${esc(t.name)}</b>${t.sub ? `<span class="small muted">${esc(t.sub)}</span>` : ''}</a>`).join('')}
+        ${(window.__BUILD__?.links || []).map((l) => `<a class="tile" href="${esc(l.url)}" target="_blank" rel="noopener"><span class="em">${esc(l.emoji || '🔗')}</span><b>${esc(l.name)}</b>${l.sub ? `<span class="small muted">${esc(l.sub)}</span>` : ''}</a>`).join('')}</div>
       <h2>Coach skills</h2><div class="tabs2">${[['urge', '🌊 Having an urge'], ['event', '🎉 Plan for an event'], ['stuck', '🧱 Can’t start'], ['hard', '🎯 Before a hard thing'], ['thought', '🧠 Thought check'], ['impulse', '⏸️ Pause before acting'], ['weekly', '🗓️ Weekly review'], ['people', '💛 Reach out']].map(([id, l]) => `<a class="chip" href="#coach/flow/${id}" style="text-decoration:none">${l}</a>`).join('')}</div>
       <div class="grid">${tiles.map(([id, em, name, sub]) => `<a class="tile" href="#explore/${id}"><span class="em">${em}</span><b>${name}</b><span class="small muted">${sub}</span></a>`).join('')}</div>
       <div style="height:14px"></div>

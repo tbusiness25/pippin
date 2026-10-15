@@ -38,6 +38,11 @@ const ITEMS = [
   { id: 'window-round', type: 'furniture', slot: 'window', name: 'Round window', price: 30 },
   { id: 'lights-fairy', type: 'furniture', slot: 'ceiling', name: 'Fairy lights', price: 30 },
   { id: 'mobile-stars', type: 'furniture', slot: 'ceiling', name: 'Star mobile', price: 25 },
+  // keepsakes — never sold: earned by doing things (reading, saving…), see src/kids/sprig.js
+  { id: 'hat-bookworm', type: 'hat', name: 'Bookworm reading cap', price: 0, reward: true },
+  { id: 'furn-tall-books', type: 'furniture', slot: 'floorR', name: 'Tower of finished books', price: 0, reward: true },
+  { id: 'furn-piggy', type: 'furniture', slot: 'floorL', name: 'Piggy bank', price: 0, reward: true },
+  { id: 'furn-trophy', type: 'furniture', slot: 'wall', name: 'Savings trophy shelf', price: 0, reward: true },
   // event items (bought with event tokens, only during the event)
   { id: 'event-harvest-scarf', type: 'neck', name: 'Harvest scarf', price: 8, event: 'harvest' },
   { id: 'event-harvest-pumpkin', type: 'furniture', slot: 'floorR', name: 'Little pumpkin', price: 10, event: 'harvest' },

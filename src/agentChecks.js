@@ -14,11 +14,13 @@ const { encrypt, decrypt } = require('./coach/crypto');
 
 const EVERY_MIN = Math.max(15, parseInt(process.env.AGENT_CHECK_EVERY_MIN || '60', 10));
 const PER_TICK = 4;
-let brain = null;
+let brains = null;
 let running = false;
 const inFlight = new Set();   // goal ids being checked right now (timer and "Check now" must not overlap)
 
-const available = () => !!(brain && typeof brain.check === 'function');
+// Each person's goals are checked by THEIR agent (see users.brain).
+const brainOf = async (uid) => (brains ? brains.forUser(uid) : null);
+const available = async (uid) => { const b = await brainOf(uid); return !!(b && typeof b.check === 'function'); };
 
 async function runCheck(user, goal) {
   if (inFlight.has(goal.id)) return { met: null, evidence: 'already checking' };
@@ -30,7 +32,8 @@ async function doCheck(user, goal) {
   const today = game.localDay(user.tz);
   const time = new Intl.DateTimeFormat('en-GB', { timeZone: user.tz, hour: '2-digit', minute: '2-digit' }).format(new Date());
   let r;
-  try { r = await Promise.race([brain.check(goal.agent_check, { today, time }), new Promise((_, rej) => setTimeout(() => rej(new Error("took too long")), 6 * 60000))]); }
+  const brain = await brainOf(user.id);
+  try { if (!brain || typeof brain.check !== 'function') throw new Error('no agent connected'); r = await Promise.race([brain.check(goal.agent_check, { today, time }), new Promise((_, rej) => setTimeout(() => rej(new Error("took too long")), 6 * 60000))]); }
   catch (e) { r = { met: null, evidence: `Couldn't check: ${e.message}`.slice(0, 140) }; }
   await pool.query('INSERT INTO goal_checks(goal_id, user_id, day, met, evidence_enc) VALUES ($1,$2,$3,$4,$5)',
     [goal.id, user.id, today, r.met, r.evidence ? encrypt(r.evidence) : null]);
@@ -62,6 +65,7 @@ async function due(limit) {
       `SELECT EXISTS (SELECT 1 FROM goal_completions WHERE goal_id=$1 AND day=$2 AND NOT undone) AS done,
               (SELECT MAX(checked_at) FROM goal_checks WHERE goal_id=$1 AND day=$2) AS last`, [g.id, today]);
     if (state.done || inFlight.has(g.id)) continue;
+    if (!(await available(g.uid))) continue;
     if (state.last && Date.now() - new Date(state.last) < EVERY_MIN * 60000) continue;
     out.push(g);
     if (out.length >= limit) break;
@@ -70,7 +74,7 @@ async function due(limit) {
 }
 
 async function tick() {
-  if (!available() || running) return;
+  if (!brains || running) return;
   running = true;
   try {
     for (const g of await due(PER_TICK)) await runCheck({ id: g.uid, tz: g.tz }, g);   // one at a time: agents are slow
@@ -101,8 +105,8 @@ async function lastChecks(uid) {
 }
 
 function start(b) {
-  brain = b;
-  if (!available()) return;
+  brains = b;
+  if (!b.profiles.length) return;
   setTimeout(tick, 30000);
   setInterval(tick, 5 * 60 * 1000);
   console.log(`[agent-checks] on — every ${EVERY_MIN} min per goal`);

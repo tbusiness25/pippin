@@ -35,7 +35,7 @@ function parse(file) {
   const transcript = ((raw.split(/^## Transcript\s*$/m)[1] || '').split(/^## /m)[0] || '').trim();
   const audio = (raw.match(/!\[\[(audio\/[^\]]+)\]\]/) || [])[1] || null;
   const title = ((raw.match(/^# (.+)$/m) || [])[1] || '').trim();
-  return { rid: get('recording_id'), date: get('date'), routerCategory: get('category'), transcript, audio, title };
+  return { rid: get('recording_id'), date: get('date'), source: get('source'), routerCategory: get('category'), transcript, audio, title };
 }
 
 function keepAudio(rel, rid) {
@@ -199,6 +199,7 @@ async function scan() {
       let note;
       try { note = parse(f); } catch { continue; }
       if (!note.rid || seen.has(note.rid) || !realTranscript(note.transcript)) continue;
+      if (/^pippin-/.test(note.source)) continue;   // written by Pippin itself (e.g. a child's Book Chat) — already filed, never re-route
       const r = await route(owner, note, f);
       done++;
       if (r.recent) {
