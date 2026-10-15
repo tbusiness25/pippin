@@ -1,6 +1,6 @@
 # Contributing
 
-Thanks for helping. This project is built for ADHD brains, by one — so small, focused contributions are perfect.
+Thanks for helping. Pippin is a small project run by one person, so small, focused contributions are perfect.
 
 ## Ground rules
 1. **No shame mechanics.** Nothing that punishes absence: no decay, no lost progress, no reset streaks, no guilt copy.

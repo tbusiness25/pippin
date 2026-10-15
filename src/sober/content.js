@@ -1,5 +1,5 @@
 /*
- * Sobriety/addiction content and safety rules. Sources: docs/research/reports/Habit and sobriety tracker design.md
+ * Sobriety/addiction content and safety rules. Sources: the research notes (not in this repository)
  * AUDIT/AUDIT-C: WHO AUDIT, UK (gov.uk/OHID) version with UK units and thresholds.
  * Helplines are UK and change — keep HELPLINES_CHECKED current; override for other countries in .env (SOBER_HELPLINES_JSON).
  */

@@ -1,6 +1,6 @@
 /*
  * Sobriety / addiction tracker UI. The headline counts free days KEPT and never goes down.
- * A drink is a lapse with a debrief — no reset button exists. Research: docs/research/reports/Habit and sobriety tracker design.md
+ * A drink is a lapse with a debrief — no reset button exists. Research: the research notes (not in this repository)
  */
 (function () {
   const { api, esc, toast, sheet } = F;

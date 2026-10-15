@@ -98,7 +98,7 @@ async function tick() {
 }
 
 /*
- * Habit + sobriety nudges (research: docs/research/reports/Habit and sobriety tracker design.md):
+ * Habit + sobriety nudges (research: the research notes (not in this repository)):
  * morning pledge, evening check-in with one-tap action, habit reminders with Done/Mini actions,
  * the evening before a risky event, ONE follow-up the morning after a lapse, a Monday fresh start.
  * Lock-screen text never names a substance or behaviour. Never: broken-streak or "missed X days" alerts.

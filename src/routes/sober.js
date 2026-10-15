@@ -1,6 +1,6 @@
 /*
  * Sobriety / addiction tracker ("I Am Sober"-style, rebuilt around the evidence).
- * Research: docs/research/reports/Habit and sobriety tracker design.md
+ * Research: the research notes (not in this repository)
  *  - HEADLINE = cumulative free days, which never goes down. "Current run" is opt-in and secondary.
  *  - A lapse is an event with a situational debrief + next-24h plan + if-then for next time. No reset, no repair.
  *  - Alcohol: AUDIT-C → AUDIT → withdrawal gate before day one; emergency card days 0–5.

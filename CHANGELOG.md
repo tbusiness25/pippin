@@ -2,6 +2,29 @@
 
 All notable changes. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), versions: [SemVer](https://semver.org/).
 
+## [0.14.0] — public release — 2026-10-15
+Pippin is now a dad's companion: a family app for chores, pocket money, messages, a little reading and a calm place
+for the grown-ups too. For parents, or anyone. It is no longer described as an ADHD companion.
+
+### Changed
+- The app, the README, FEATURES, SAFETY, PRIVACY and CONTRIBUTING describe the family app, not an ADHD tool.
+  ADHD appears only where it describes an optional feature (such as a library page) or a research reference.
+- New [docs/PRIVACY.md](docs/PRIVACY.md): what is stored, where, for how long, and who can see it.
+- [docs/SAFETY.md](docs/SAFETY.md) has a children's section. Each rule there says whether this release enforces it.
+- [.env.example](.env.example) documents every setting the code reads, in groups, with blank secrets and safe defaults.
+
+### Added
+- Buddy chat messages are deleted after 90 days by default. Set `KIDS_BUDDY_RETENTION_DAYS` to change this, or to `0` to keep them.
+- Book Chat voice recordings are kept until a parent removes them, unless `KIDS_BOOK_CHAT_RETENTION_DAYS` is set.
+- The children's model only calls a host on your own network. Anything else is refused before a request is sent,
+  unless `KIDS_LLM_ALLOW_CLOUD=true` (which logs a warning at start-up).
+- A parent can download everything held about a child (one JSON file, with passwords, PIN hashes, tokens and keys left
+  out), plus a tar of their audio and files. A parent can download a child's Buddy chats on their own too. Each
+  Buddy download is recorded in the audit log.
+- A parent can remove a child by typing their name. A removed child can't sign in. Their data is purged for good
+  after `CHILD_PURGE_DAYS` (30 by default). `CHILD_PURGE_DRY_RUN=true` previews the purge.
+- Children sign in with "Child sign-in" and a PIN. The signed-out screen lists adults only.
+
 ## [0.14.0] — 2026-10-15
 ### Added
 - **Household roles**: adults and children on one server (`users.role`, `is_parent`, `slug`). Child accounts get a

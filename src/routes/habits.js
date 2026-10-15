@@ -1,5 +1,5 @@
 /*
- * Habit tracker. Research: docs/research/reports/Habit and sobriety tracker design.md
+ * Habit tracker. Research: the research notes (not in this repository)
  *  - every habit is an if-then: "After I <anchor>, I will <tiny>" (+ optional barrier plan)
  *  - flexible "X per week" targets; planned skip days never count as misses
  *  - headline = habit strength (Loop's exponential score) — rises slowly, a miss only dents it

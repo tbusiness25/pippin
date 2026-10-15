@@ -1,6 +1,6 @@
 /*
  * The coach's persona and flows. Original wording, built from the research in
- * docs/research/reports/ADHD coach app blueprint.md:
+ * the research notes (not in this repository):
  *   - coaching stance: ADHD lens, no shame, person sets the agenda, values, always end on action (PAAC);
  *   - point of performance (Barkley): help lands at the moment of action, scaffolds are permanent;
  *   - CBT-for-ADHD skills as practice, not lessons (Safren/Solanto): one capture list, prioritise,
