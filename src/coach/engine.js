@@ -205,7 +205,8 @@ async function turn(uid, { text, flow }) {
 
 /** Delete coach transcripts older than the retention window (default 60 days). */
 async function purge() {
-  const days = parseInt(process.env.COACH_RETENTION_DAYS || '60', 10);
+  // 0 or junk means the default. Never 0: a zero window would delete every conversation.
+  const days = Math.max(1, parseInt(process.env.COACH_RETENTION_DAYS, 10) || 60);
   const { rowCount } = await pool.query(`DELETE FROM coach_messages WHERE created_at < NOW() - ($1 || ' days')::interval`, [String(days)]);
   if (rowCount) console.log(`[coach] purged ${rowCount} messages older than ${days} days`);
 }

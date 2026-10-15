@@ -78,7 +78,7 @@ module.exports = (brains) => {
 
   router.get('/info', (req, res) => res.json({ ok: true, model: llm.label(), local: llm.local(), configured: llm.configured(),
     flows: Object.entries(engine.FLOWS).map(([id, f]) => ({ id, label: f.label })),
-    voice: !!(process.env.WHISPER_URL && process.env.TTS_URL), retentionDays: parseInt(process.env.COACH_RETENTION_DAYS || '60', 10) }));
+    voice: !!(process.env.WHISPER_URL && process.env.TTS_URL), retentionDays: Math.max(1, parseInt(process.env.COACH_RETENTION_DAYS, 10) || 60) }));
 
   // How the coach sounds, and which NHS pages it may use.
   const style = require('../coach/style');
