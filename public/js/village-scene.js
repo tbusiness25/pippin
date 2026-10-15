@@ -33,18 +33,25 @@
     pond: 0x7fc8e8, wall: 0xf6e7c8, wall2: 0xf8d9b0, roof: 0xd9674f, roof2: 0x9c6b4e, shop: 0xf3c98b, bake: 0xf2b8a0, red: 0xe8473f,
     skin: 0xf5d2b0, sprig: 0xffd27a, dark: 0x3b2d2a, glass: 0xbfe6ff, stone: 0xbdb6aa };
 
+  /** 0 (night) → 1 (full day), from the London hour, the same curve the sky uses. */
+  function dayness() {
+    const sunY = Math.sin(((londonHour() - 6) / 24) * Math.PI * 2);
+    return clamp(sunY * 1.6 + 0.25, 0, 1);
+  }
+
   /** Build everything for 'home' (my village) or 'town'. Returns the parts the loop needs. */
   function build(THREE, scene, kind) {
     const mats = {};
     const m = (c) => (mats[c] = mats[c] || new THREE.MeshLambertMaterial({ color: c }));
-    const add = (mesh, x = 0, y = 0, z = 0) => { mesh.position.set(x, y, z); scene.add(mesh); return mesh; };
+    const statics = [];   // architecture the painted backdrop already shows; hidden while a backdrop is up
+    const add = (mesh, x = 0, y = 0, z = 0) => { mesh.position.set(x, y, z); scene.add(mesh); statics.push(mesh); return mesh; };
     const box = (w, h, d, c, x, y, z) => add(new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m(c)), x, y, z);
     const cyl = (r1, r2, h, c, x, y, z, seg = 8) => add(new THREE.Mesh(new THREE.CylinderGeometry(r1, r2, h, seg), m(c)), x, y, z);
     const cone = (r, h, c, x, y, z, seg = 4) => add(new THREE.Mesh(new THREE.ConeGeometry(r, h, seg), m(c)), x, y, z);
     const ball = (r, c, x, y, z) => add(new THREE.Mesh(new THREE.SphereGeometry(r, 10, 8), m(c)), x, y, z);
-    const parts = { villagers: [], spots: [], bus: null, sun: null, moon: null, sprig: null };
     const ground = new THREE.Mesh(new THREE.PlaneGeometry(40, 40), m(kind === 'town' ? C.cobble : C.grass));
     ground.rotation.x = -Math.PI / 2; scene.add(ground);
+    const parts = { villagers: [], spots: [], bus: null, sun: null, moon: null, sprig: null, ground };
 
     if (kind === 'home') {
       // paths
@@ -60,7 +67,7 @@
       // trees & bus stop
       for (const [x, z] of [[-10, -2], [-9, 6], [10, -4], [11, 3], [2, -10], [-3, 9], [9, 9]]) { cyl(0.18, 0.22, 1, C.trunk, x, 0.5, z, 6); ball(0.9, C.leaves, x, 1.6, z); }
       parts.stopAt = [0, 8.2];
-      cyl(0.07, 0.07, 1.6, C.dark, 0, 0.8, 8.2, 6); box(1.1, 0.5, 0.08, C.wall, 0, 1.7, 8.2);
+      parts.stopPole = cyl(0.07, 0.07, 1.6, C.dark, 0, 0.8, 8.2, 6); parts.stopSign = box(1.1, 0.5, 0.08, C.wall, 0, 1.7, 8.2);
       parts.bus = null;
       // the sprig's wandering spot is in front of its house
       parts.sprigHome = [-4, 0, -1.5];
@@ -102,6 +109,9 @@
     }
     // the sun and moon
     parts.sun = ball(0.9, 0xfff3a0, 0, 10, -12); parts.moon = ball(0.7, 0xe8ecff, 0, -10, -12);
+    // what stays visible over a painted backdrop: the bus stop, sun and moon, the ground-level people and the bus
+    const keep = new Set([parts.stopPole, parts.stopSign, parts.sun, parts.moon, ground]);
+    parts.statics = statics.filter((o) => !keep.has(o));
     // villagers
     for (const v of parts.routes || []) parts.villagers.push(person(THREE, scene, v.c, v.hat, v.route));
     return parts;
@@ -175,7 +185,10 @@
     function sceneFor(kind) {
       while (scene.children.length > 2) { const o = scene.children.pop(); o.traverse?.((x) => x.geometry?.dispose?.()); }   // keep the two lights
       world.kind = kind;
+      drawTop();   // the title says "Town" or "village" for the place we're in
       world.parts = build(THREE_, scene, kind);
+      if (world.backdrop) hideStatics(world.parts);
+      setBackdrop(kind);
       world.spots = [];
       spotsEl.innerHTML = '';
       const amb = world.amb || {};
@@ -196,6 +209,25 @@
       spotsEl.querySelectorAll('[data-line]').forEach((b) => { b.onclick = () => say(villagerLine(b.dataset.line, amb)); });
       spotsEl.querySelectorAll('[data-hi]').forEach((b) => { b.onclick = () => say(sprigLine()); });
     }
+    // The painted backdrop (public/art/village/*.jpg) replaces the flat sky colour. If an image is missing, the sky colour stays.
+    function hideStatics(P) {
+      if (P.ground) P.ground.visible = false;
+      for (const o of P.statics || []) o.visible = false;
+    }
+    function setBackdrop(kind) {
+      const d = dayness() >= 0.5;
+      const name = kind === 'town' ? (d ? 'town-day' : 'town-night') : (d ? 'village-day' : 'village-dusk');
+      if (world.backdropName === name) return;
+      world.backdropName = name;
+      world.backdrop = false;
+      new THREE_.TextureLoader().load(`/art/village/${name}.jpg`, (tex) => {
+        if (world.backdropName !== name) return;
+        tex.colorSpace = THREE_.SRGBColorSpace;
+        scene.background = tex;
+        world.backdrop = true;
+        if (world.parts) hideStatics(world.parts);   // let the painting show
+      }, undefined, () => {});
+    }
     function sprigLine() {
       const name = world.info.pet ? world.info.pet.name : 'Your sprig';
       const lines = [`${name} does a happy wiggle.`, `${name} is trying to catch a butterfly.`, `${name} thinks you should go and say hello to the ducks.`];
@@ -215,16 +247,17 @@
       try {
         const r = await call(`${base}/talk/${encodeURIComponent(npc)}`, {});
         F.toast?.(r.messages?.[0] || '');
-        showDialogue(r);
+        showDialogue(r, npc);
       } catch (e) { F.toast?.(e.message); }
       finally { world.busy = false; }
     }
-    function showDialogue(r) {
+    function showDialogue(r, npc) {
       let i = 0;
       sayEl.hidden = false;
       const draw = () => {
         if (i < r.lines.length) {
-          sayEl.innerHTML = `<div class="vil-card"><div class="vil-who">${esc(r.emoji)} ${esc(r.name)} <small>${esc(r.job)}</small></div>
+          const portrait = npc ? `<img class="vil-portrait" src="/art/village/${esc(npc)}.png" alt="" onerror="this.remove()">` : '';
+          sayEl.innerHTML = `<div class="vil-card">${portrait}<div class="vil-who">${esc(r.emoji)} ${esc(r.name)} <small>${esc(r.job)}</small></div>
             <p>${esc(r.lines[i])}</p><button class="vil-btn" id="vilNext">${i < r.lines.length - 1 ? 'Next ▸' : 'Thanks!'}</button></div>`;
           sayEl.querySelector('#vilNext').onclick = () => { i++; if (i >= r.lines.length) { sayEl.hidden = true; } else draw(); };
         } else sayEl.hidden = true;
@@ -264,7 +297,7 @@
       const dayness = clamp(sunY * 1.6 + 0.25, 0, 1);
       const dusk = clamp(1 - Math.abs(sunY) * 3, 0, 1) * 0.6;
       sky.copy(NIGHT).lerp(DAY, dayness).lerp(DUSK, dusk);
-      scene.background = sky.clone();
+      if (!world.backdrop) scene.background = sky.clone();
       sunLight.intensity = 0.2 + 0.8 * dayness;
       sunLight.position.set(Math.cos(sunAng) * 20, Math.max(4, sunY * 20), 8);
       if (world.parts) { world.parts.sun.position.set(Math.cos(sunAng) * 22, sunY * 22, -12); world.parts.moon.position.set(-Math.cos(sunAng) * 22, -sunY * 22, -12); }
