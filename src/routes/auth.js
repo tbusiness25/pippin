@@ -85,6 +85,32 @@ router.post('/verify-pin', async (req, res) => {
 });
 
 // Change your own PIN (needs the current one; same lockout as login).
+// A parent sets someone else's PIN (e.g. a child who forgot it, or the other adult). The parent must confirm with
+// their OWN current PIN, so an unlocked phone alone can't reset anyone.
+router.post('/set-pin/:uid', async (req, res) => {
+  const sess = readSession(req);
+  const { my_pin, new_pin } = req.body || {};
+  if (!sess?.uid) return res.status(401).json({ ok: false, error: 'unauthorized' });
+  if (!validPin(new_pin)) return res.status(400).json({ ok: false, error: 'New PIN must be 4–8 digits' });
+  const keys = keysFor(req, sess.uid);
+  const wait = limit.lockedFor(keys);
+  if (wait) return tooMany(res, wait);
+  const { rows: [me] } = await pool.query('SELECT pin_hash, is_parent FROM users WHERE id=$1 AND deleted_at IS NULL', [sess.uid]);
+  if (!me || !me.is_parent) return res.status(403).json({ ok: false, error: 'Only a parent can change someone else’s PIN' });
+  if (!validPin(my_pin) || !(await verifyPin(my_pin, me.pin_hash))) {
+    limit.fail(keys);
+    return res.status(401).json({ ok: false, error: 'Your own PIN didn’t match' });
+  }
+  limit.ok(keys);
+  const { rows: [target] } = await pool.query('SELECT id, name, role FROM users WHERE id=$1 AND deleted_at IS NULL', [req.params.uid]);
+  if (!target) return res.status(404).json({ ok: false, error: 'Not found' });
+  // Parents reset a child's PIN only. Another adult changes their own (/change-pin), so one parent can't lock out another.
+  if (target.role !== 'child') return res.status(403).json({ ok: false, error: 'A parent can only reset a child’s PIN' });
+  await pool.query('UPDATE users SET pin_hash=$2 WHERE id=$1', [target.id, await hashPin(new_pin)]);
+  console.log(`[auth] PIN for ${String(target.name).trim()} set by a parent`);
+  res.json({ ok: true, name: String(target.name).trim() });
+});
+
 router.post('/change-pin', async (req, res) => {
   const sess = readSession(req);
   const { pin, new_pin } = req.body || {};

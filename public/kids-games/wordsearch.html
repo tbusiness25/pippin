@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no"/>
+<meta name="theme-color" content="#0a0b0d"/>
+<title>Word Search</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#0a0b0d;--panel:#15171c;--line:#262a33;--text:#f2f3f5;--muted:#9aa1ac;--accent:#4ec7ff;--good:#57d38c}
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:'DM Sans',system-ui,sans-serif;min-height:100dvh;display:flex;flex-direction:column;align-items:center;padding:env(safe-area-inset-top) 10px 16px;touch-action:none;overscroll-behavior:none}
+  .top{width:100%;max-width:480px;display:flex;align-items:center;justify-content:space-between;padding:8px 0 4px}
+  .back{color:var(--muted);text-decoration:none;font-weight:600;font-size:15px;padding:8px}
+  h1{font-size:20px;margin:0;font-weight:700}
+  .theme{font-size:14px;color:var(--accent);font-weight:700;margin:2px 0 8px;text-transform:uppercase;letter-spacing:1px}
+  .grid{display:grid;gap:2px;width:min(96vw,460px);background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:6px;touch-action:none}
+  .c{aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:clamp(13px,3.6vw,20px);font-weight:700;border-radius:8px;user-select:none;color:var(--text);background:transparent}
+  .c.sel{background:var(--accent);color:#06121a}
+  .c.done{background:rgba(87,211,140,.28);color:var(--good)}
+  .words{width:100%;max-width:480px;display:flex;flex-wrap:wrap;gap:6px;margin-top:12px;justify-content:center}
+  .w{background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:6px 12px;font-size:15px;font-weight:600}
+  .w.found{text-decoration:line-through;color:var(--good);border-color:var(--good)}
+  .btn{background:var(--accent);color:#06121a;border:none;border-radius:14px;padding:13px 22px;font-size:16px;font-weight:700;font-family:inherit;margin-top:14px}
+  .over{position:fixed;inset:0;background:rgba(10,11,13,.94);display:none;flex-direction:column;align-items:center;justify-content:center;z-index:10;text-align:center;padding:24px}
+  .over.show{display:flex}.over .big{font-size:64px}
+</style>
+</head>
+<body>
+  <div class="top"><a class="back" href="/#k/games">‹ Games</a><h1>🔎 Word Search</h1><span style="width:60px"></span></div>
+  <div class="theme" id="theme"></div>
+  <div class="grid" id="grid"></div>
+  <div class="words" id="words"></div>
+  <button class="btn" id="new">New puzzle</button>
+  <div class="over" id="over"><div class="big">🌟</div><h2>You found them all!</h2><button class="btn" onclick="newPuzzle()">Play again</button><a class="back" style="margin-top:12px" href="/#k/games">Back to games</a></div>
+<script>
+const THEMES={
+  Animals:["tiger","zebra","panda","koala","otter","horse","sheep","mouse","eagle","shark","snake","rabbit","monkey","dolphin","penguin","giraffe"],
+  Food:["pizza","apple","bread","mango","lemon","pasta","honey","grape","melon","carrot","banana","cheese","cookie","pancake","noodle","yogurt"],
+  Space:["star","moon","mars","comet","orbit","pluto","venus","saturn","rocket","planet","galaxy","meteor","cosmos","nebula","gravity","astronaut"],
+  Sports:["goal","swim","judo","rugby","tennis","boxing","hockey","soccer","karate","cricket","cycling","running","netball","surfing","skating","football"],
+  Nature:["tree","leaf","river","cloud","grass","stone","flower","forest","meadow","stream","valley","desert","island","rainbow","mountain","waterfall"],
+  School:["book","desk","pen","ruler","paint","maths","music","science","teacher","pencil","lesson","reading","history","library","homework","backpack"],
+  Colours:["red","blue","pink","green","black","white","brown","orange","purple","yellow","silver","golden","violet","maroon","turquoise","magenta"],
+  Body:["arm","leg","head","hand","foot","knee","elbow","heart","brain","tongue","finger","shoulder","stomach","muscle","skeleton","eyebrow"]
+};
+const DIRS=[[1,0],[0,1],[1,1],[1,-1],[-1,0],[0,-1],[-1,-1],[-1,1]];
+const $=s=>document.querySelector(s);
+let N=11,gridEl=$('#grid'),cellEls=[],letters=[],placements=[],foundWords=new Set(),wordEls={};
+
+function rnd(n){return Math.floor(Math.random()*n);}
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=rnd(i+1);[a[i],a[j]]=[a[j],a[i]];}return a;}
+
+function newPuzzle(){
+  $('#over').classList.remove('show');
+  const names=Object.keys(THEMES);const theme=names[rnd(names.length)];
+  $('#theme').textContent=theme;
+  // pick 8 words that fit
+  let pool=shuffle(THEMES[theme].map(w=>w.toUpperCase()).filter(w=>w.length<=N)).slice(0,8);
+  letters=Array.from({length:N*N},()=>null);placements=[];foundWords=new Set();
+  for(const w of pool){place(w);}
+  // fill blanks
+  const AZ="ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  for(let i=0;i<letters.length;i++)if(!letters[i])letters[i]=AZ[rnd(26)];
+  draw();
+  drawWords(pool.filter(w=>placements.find(p=>p.word===w)));
+}
+function place(w){
+  for(let tries=0;tries<80;tries++){
+    const d=DIRS[rnd(DIRS.length)],r=rnd(N),c=rnd(N);
+    const er=r+d[1]*(w.length-1),ec=c+d[0]*(w.length-1);
+    if(er<0||er>=N||ec<0||ec>=N)continue;
+    let ok=true,cellsIdx=[];
+    for(let k=0;k<w.length;k++){const rr=r+d[1]*k,cc=c+d[0]*k,idx=rr*N+cc;if(letters[idx]&&letters[idx]!==w[k]){ok=false;break;}cellsIdx.push(idx);}
+    if(!ok)continue;
+    w.split('').forEach((ch,k)=>letters[cellsIdx[k]]=ch);
+    placements.push({word:w,cells:cellsIdx});return true;
+  }
+  return false;
+}
+function draw(){
+  gridEl.style.gridTemplateColumns=`repeat(${N},1fr)`;gridEl.innerHTML='';cellEls=[];
+  letters.forEach((ch,i)=>{const d=document.createElement('div');d.className='c';d.textContent=ch;d.dataset.i=i;gridEl.appendChild(d);cellEls.push(d);});
+}
+function drawWords(list){
+  const box=$('#words');box.innerHTML='';wordEls={};
+  list.forEach(w=>{const s=document.createElement('span');s.className='w';s.textContent=w;box.appendChild(s);wordEls[w]=s;});
+}
+// selection: drag a straight line
+let sel=[],start=null,dragging=false;
+function idxAt(x,y){const el=document.elementFromPoint(x,y);return el&&el.classList.contains('c')?+el.dataset.i:null;}
+function lineFrom(a,b){
+  const ar=a/N|0,ac=a%N,br=b/N|0,bc=b%N,dr=br-ar,dc=bc-ac;
+  const len=Math.max(Math.abs(dr),Math.abs(dc));
+  if(len===0)return[a];
+  if(dr!==0&&dc!==0&&Math.abs(dr)!==Math.abs(dc))return null; // not straight/diagonal
+  const sr=Math.sign(dr),sc=Math.sign(dc),out=[];
+  for(let k=0;k<=len;k++)out.push((ar+sr*k)*N+(ac+sc*k));
+  return out;
+}
+function paint(){cellEls.forEach((c,i)=>{if(!c.classList.contains('done'))c.classList.toggle('sel',sel.includes(i));});}
+function down(e){const t=e.touches?e.touches[0]:e;start=idxAt(t.clientX,t.clientY);if(start==null)return;dragging=true;sel=[start];paint();e.preventDefault();}
+function move(e){if(!dragging)return;const t=e.touches?e.touches[0]:e;const i=idxAt(t.clientX,t.clientY);if(i==null)return;const l=lineFrom(start,i);if(l){sel=l;paint();}e.preventDefault();}
+function up(e){if(!dragging)return;dragging=false;check();sel=[];paint();e.preventDefault();}
+function check(){
+  const str=sel.map(i=>letters[i]).join('');const rev=str.split('').reverse().join('');
+  const p=placements.find(p=>(p.word===str||p.word===rev)&&!foundWords.has(p.word));
+  if(p){foundWords.add(p.word);p.cells.forEach(i=>{cellEls[i].classList.add('done');cellEls[i].classList.remove('sel');});
+    wordEls[p.word]&&wordEls[p.word].classList.add('found');navigator.vibrate&&navigator.vibrate([10,30,10]);
+    if(foundWords.size===Object.keys(wordEls).length){setTimeout(()=>$('#over').classList.add('show'),300);if(window.kidsRound)kidsRound('wordsearch');}
+  }
+}
+gridEl.addEventListener('touchstart',down,{passive:false});
+gridEl.addEventListener('touchmove',move,{passive:false});
+gridEl.addEventListener('touchend',up,{passive:false});
+gridEl.addEventListener('mousedown',down);window.addEventListener('mousemove',move);window.addEventListener('mouseup',up);
+$('#new').addEventListener('click',newPuzzle);
+newPuzzle();
+</script>
+<script src="/kids-games/sprig-link.js"></script>
+</body>
+</html>

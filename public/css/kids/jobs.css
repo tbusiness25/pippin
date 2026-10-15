@@ -1,0 +1,50 @@
+/* ✅ My jobs & 🎧 My Yoto — big, friendly, one-thing-at-a-time */
+.kj-tabs { display: flex; gap: 8px; margin: 10px 0 14px; overflow-x: auto; }
+.kj-tab { flex: 1 0 auto; text-align: center; padding: 10px 12px; border-radius: 999px; background: var(--card); box-shadow: var(--shadow); text-decoration: none; color: var(--ink); font-weight: 700; white-space: nowrap; }
+.kj-tab.on { background: var(--moss); color: #fff; }
+.kj-day { color: var(--muted); margin: 4px 0 6px; font-weight: 600; }
+.kj-progress { height: 14px; border-radius: 7px; background: var(--line); overflow: hidden; }
+.kj-progress > div { height: 100%; background: linear-gradient(90deg, var(--moss), var(--sun)); transition: width .4s; border-radius: 7px; }
+.kj-count { margin: 6px 0 10px; font-weight: 700; }
+.kj-h { font-size: 1.05rem; margin: 16px 0 6px; font-family: var(--display); }
+.kj-job { display: flex; gap: 12px; align-items: center; background: var(--card); border-radius: 16px; padding: 12px; margin-bottom: 8px; box-shadow: var(--shadow); }
+.kj-job.is-done { opacity: .6; }
+.kj-job.is-done .kj-title { text-decoration: line-through; }
+.kj-tick { width: 52px; height: 52px; flex: none; border-radius: 16px; border: 3px solid var(--moss); background: #fff; font-size: 1.8rem; color: var(--moss-deep); cursor: pointer; }
+.kj-job.is-done .kj-tick { background: var(--moss); color: #fff; }
+.kj-mid { flex: 1; min-width: 0; }
+.kj-title { font-weight: 700; font-size: 1.05rem; }
+.kj-detail { color: var(--muted); font-size: .9rem; margin-top: 2px; }
+.kj-timer { flex: none; border: 0; border-radius: 12px; padding: 8px 10px; background: #e8f4fb; color: #235; font-weight: 700; cursor: pointer; }
+.kj-week { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px; }
+.kj-dayc { background: var(--card); border-radius: 16px; padding: 8px; box-shadow: var(--shadow); }
+.kj-dayc.today { outline: 3px solid var(--sun); }
+.kj-dn { font-family: var(--display); font-weight: 700; margin-bottom: 6px; }
+.kj-dn small { display: block; color: var(--muted); font-weight: 500; }
+.kj-slot { display: block; width: 100%; text-align: left; border: 2px dashed var(--line); background: var(--bg); border-radius: 12px; padding: 8px; margin-top: 6px; cursor: pointer; color: var(--ink); }
+.kj-slot small { display: block; color: var(--muted); font-size: .7rem; }
+.kj-slot span { color: var(--muted); }
+.kj-slot.set { border: 2px solid var(--moss); background: #eef7ea; }
+.kj-slot.done b { text-decoration: line-through; opacity: .7; }
+.kj-pill { border: 2px solid var(--line); background: var(--card); border-radius: 999px; padding: 8px 14px; font-weight: 700; color: var(--ink); cursor: pointer; margin: 3px; }
+.kj-pill.on { background: var(--moss); color: #fff; border-color: var(--moss); }
+.kj-cats { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0; }
+.kj-cat { border: 0; border-radius: 14px; padding: 10px 12px; background: #eef4fa; font-weight: 700; color: var(--ink); cursor: pointer; }
+.kj-cat.used { opacity: .55; }
+.kj-list { display: grid; gap: 8px; margin-top: 8px; }
+.kj-item { text-align: left; border: 0; border-radius: 14px; padding: 12px; background: var(--card); box-shadow: var(--shadow); font-size: 1rem; color: var(--ink); cursor: pointer; }
+.kj-now { background: #fff8e6; border-radius: 14px; padding: 12px; }
+.kj-ring { position: relative; width: 200px; height: 200px; margin: 6px auto 12px; }
+.kj-ring svg { transition: stroke-dashoffset 1s linear; }
+.kj-clock { position: absolute; inset: 0; display: grid; place-items: center; font: 700 2.6rem var(--display); }
+.kj-guide h2 { font-size: 1.15rem; margin: 18px 0 4px; font-family: var(--display); }
+.kj-guide p { margin: 0 0 6px; line-height: 1.55; font-size: 1.02rem; }
+.ky-list { display: grid; gap: 10px; }
+.ky-card { display: flex; gap: 12px; align-items: center; background: var(--card); border-radius: 16px; padding: 10px; box-shadow: var(--shadow); }
+.ky-card img, .ky-cover { width: 64px; height: 64px; border-radius: 12px; object-fit: cover; flex: none; display: grid; place-items: center; background: #fff3d1; font-size: 1.8rem; }
+.ky-actions { display: grid; gap: 10px; margin: 10px 0 14px; }
+.ky-part { display: flex; gap: 10px; align-items: center; background: var(--card); border-radius: 14px; padding: 10px; margin-bottom: 6px; box-shadow: var(--shadow); }
+.ky-n { width: 28px; height: 28px; border-radius: 50%; background: var(--sun); display: grid; place-items: center; font-weight: 800; flex: none; }
+.ky-part .ok { color: var(--moss-deep); font-weight: 700; }
+.ky-part .bad { color: var(--danger); font-weight: 700; }
+.fld { display: flex; flex-direction: column; gap: 4px; margin: 8px 0; }

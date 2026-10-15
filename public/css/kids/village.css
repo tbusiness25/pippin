@@ -1,0 +1,21 @@
+/* 🌾 The village (public/js/village-scene.js) */
+.vil { position: relative; height: calc(100vh - 150px); min-height: 460px; border-radius: 18px; overflow: hidden; background: #a9dcff; }
+.vil-stage { position: absolute; inset: 0; }
+.vil-stage canvas { width: 100% !important; height: 100% !important; display: block; }
+.vil-load { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; padding: 16px; margin: 0; font-weight: 600; color: #2c3e50; }
+.vil-top { position: absolute; top: 10px; left: 10px; right: 10px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; pointer-events: none; }
+.vil-top > * { pointer-events: auto; }
+.vil-title { background: rgba(255,255,255,.88); padding: 6px 12px; border-radius: 999px; font-weight: 700; color: #2c3e50; box-shadow: 0 2px 6px rgba(0,0,0,.12); }
+.vil-row { display: flex; gap: 8px; align-items: center; }
+.vil-pill { background: rgba(255,255,255,.88); padding: 6px 10px; border-radius: 999px; font-weight: 600; color: #2c3e50; }
+.vil-switch { background: rgba(255,255,255,.88); padding: 6px 10px; border-radius: 999px; font-size: .85rem; color: #2c3e50; display: flex; gap: 6px; align-items: center; cursor: pointer; }
+.vil-spots { position: absolute; inset: 0; pointer-events: none; }
+.vil-spot { position: absolute; left: 0; top: 0; transition: opacity .2s; }
+.vil-spot-b { pointer-events: auto; transform: translate(-50%, -50%); white-space: nowrap; font: inherit; font-size: .85rem; font-weight: 600; color: #2c3e50; background: rgba(255,255,255,.92); border: 0; border-radius: 999px; padding: 6px 10px; box-shadow: 0 2px 8px rgba(0,0,0,.18); cursor: pointer; }
+.vil-spot-b:active { transform: translate(-50%, -50%) scale(.96); }
+.vil-say { position: absolute; left: 10px; right: 10px; bottom: 10px; z-index: 2; }
+.vil-card { background: #fffdf8; border-radius: 16px; padding: 14px 16px; box-shadow: 0 8px 24px rgba(0,0,0,.22); }
+.vil-card p { margin: 6px 0 10px; font-size: 1.05rem; line-height: 1.45; }
+.vil-who { font-weight: 700; color: #2c3e50; }
+.vil-who small { font-weight: 500; color: #7a8a99; margin-left: 4px; }
+.vil-btn { font: inherit; font-weight: 600; background: #4a9abf; color: #fff; border: 0; border-radius: 10px; padding: 8px 14px; cursor: pointer; }

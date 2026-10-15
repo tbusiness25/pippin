@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no"/>
+<meta name="theme-color" content="#0a0b0d"/>
+<title>Boggle</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#0a0b0d;--panel:#15171c;--line:#262a33;--text:#f2f3f5;--muted:#9aa1ac;--accent:#ffb14e;--accent2:#4ec7ff;--good:#57d38c;--bad:#ff6b6b}
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:'DM Sans',system-ui,sans-serif;min-height:100dvh;display:flex;flex-direction:column;align-items:center;padding:env(safe-area-inset-top) 12px 16px;overscroll-behavior:none;touch-action:none}
+  .top{width:100%;max-width:460px;display:flex;align-items:center;justify-content:space-between;padding:8px 0 4px}
+  .back{color:var(--muted);text-decoration:none;font-weight:600;font-size:15px;padding:8px}
+  h1{font-size:20px;margin:0;font-weight:700}
+  .stats{width:100%;max-width:460px;display:flex;gap:8px;margin:6px 0 10px}
+  .stat{flex:1;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:10px;text-align:center}
+  .stat .k{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+  .stat .v{font-size:22px;font-weight:700;margin-top:2px}
+  #timer.low{color:var(--bad)}
+  .board{width:min(92vw,420px);aspect-ratio:1;display:grid;grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(4,1fr);gap:8px;margin:4px 0}
+  .cell{background:var(--panel);border:2px solid var(--line);border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:clamp(24px,8vw,40px);font-weight:700;user-select:none;transition:transform .06s,background .1s,border-color .1s}
+  .cell.sel{background:var(--accent);color:#111;border-color:var(--accent);transform:scale(.94)}
+  .cell.last{background:var(--accent2);border-color:var(--accent2)}
+  .current{min-height:34px;font-size:24px;font-weight:700;letter-spacing:3px;margin:8px 0 2px;color:var(--accent)}
+  .msg{min-height:20px;font-size:14px;font-weight:600;color:var(--muted)}
+  .msg.good{color:var(--good)}.msg.bad{color:var(--bad)}
+  .found{width:100%;max-width:460px;margin-top:10px}
+  .found h2{font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin:0 0 6px}
+  .chips{display:flex;flex-wrap:wrap;gap:6px}
+  .chip{background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:4px 10px;font-size:14px;font-weight:600}
+  .btn{background:var(--accent);color:#111;border:none;border-radius:14px;padding:14px 22px;font-size:16px;font-weight:700;font-family:inherit;margin-top:12px}
+  .over{position:fixed;inset:0;background:rgba(10,11,13,.94);display:none;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center;z-index:10}
+  .over.show{display:flex}
+  .over h2{font-size:32px;margin:0 0 6px}.over .big{font-size:56px;font-weight:700;color:var(--accent);margin:6px 0}
+</style>
+</head>
+<body>
+  <div class="top"><a class="back" href="/#k/games">‹ Games</a><h1>🔤 Boggle</h1><span style="width:60px"></span></div>
+  <div class="stats">
+    <div class="stat"><div class="k">Score</div><div class="v" id="score">0</div></div>
+    <div class="stat"><div class="k">Words</div><div class="v" id="wcount">0</div></div>
+    <div class="stat"><div class="k">Time</div><div class="v" id="timer">3:00</div></div>
+  </div>
+  <div class="board" id="board"></div>
+  <div class="current" id="current">&nbsp;</div>
+  <div class="msg" id="msg">Swipe or tap connected letters to make a word (3+).</div>
+  <div class="found"><h2>Found words</h2><div class="chips" id="chips"></div></div>
+
+  <div class="over" id="over">
+    <h2>Time's up!</h2>
+    <div class="big" id="final">0</div>
+    <div id="finalwords" style="color:var(--muted)">0 words found</div>
+    <button class="btn" onclick="location.reload()">Play again</button>
+    <a class="back" style="margin-top:14px" href="/#k/games">Back to games</a>
+  </div>
+
+<script src="/kids-games/words.js"></script>
+<script src="/kids-games/sprig-link.js"></script>
+<script>
+const DICE=["AAEEGN","ABBJOO","ACHOPS","AFFKPS","AOOTTW","CIMOTU","DEILRX","DELRVY","DISTTY","EEGHNW","EEINSU","EHRTVW","EIOSST","ELRTTY","HIMNQU","HLNNRZ"];
+const $=s=>document.querySelector(s);
+let grid=[],cells=[],path=[],score=0,found=new Set(),time=180,timer;
+
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+function build(){
+  const dice=shuffle([...DICE]);
+  const board=$('#board');board.innerHTML='';cells=[];grid=[];
+  for(let i=0;i<16;i++){
+    let ch=dice[i][Math.floor(Math.random()*6)];
+    if(ch==='Q')ch='Qu';
+    grid[i]=ch;
+    const d=document.createElement('div');d.className='cell';d.textContent=ch;d.dataset.i=i;
+    board.appendChild(d);cells.push(d);
+  }
+}
+function adj(a,b){const ax=a%4,ay=(a/4|0),bx=b%4,by=(b/4|0);return Math.abs(ax-bx)<=1&&Math.abs(ay-by)<=1&&a!==b;}
+function word(){return path.map(i=>grid[i]).join('').toLowerCase();}
+function render(){
+  cells.forEach((c,i)=>{c.classList.toggle('sel',path.includes(i));c.classList.toggle('last',path[path.length-1]===i);});
+  $('#current').textContent=word().toUpperCase()||' ';
+}
+function addCell(i){
+  if(path.includes(i)){ // allow backtrack to previous
+    if(path.length>=2&&path[path.length-2]===i){path.pop();render();}
+    return;
+  }
+  if(path.length===0||adj(path[path.length-1],i)){path.push(i);render();navigator.vibrate&&navigator.vibrate(8);}
+}
+function score_word(len){return len<=4?1:len===5?2:len===6?3:len===7?5:11;}
+function submit(){
+  const w=word();
+  const m=$('#msg');
+  if(w.length<3){m.textContent='Too short — 3+ letters.';m.className='msg bad';}
+  else if(found.has(w)){m.textContent='Already found "'+w.toUpperCase()+'"';m.className='msg bad';}
+  // words.js BLOCKLIST strips proper nouns / brands / abbreviations (IRS, CPU, CRAIG)
+  // that survive the google-10k filter, so they don't count as finds.
+  else if(!window.WORDS.has(w)||(window.BLOCKLIST&&window.BLOCKLIST.has(w))){m.textContent='"'+w.toUpperCase()+'" isn\'t in the word list.';m.className='msg bad';}
+  else{
+    found.add(w);const pts=score_word(w.length);score+=pts;
+    $('#score').textContent=score;$('#wcount').textContent=found.size;
+    const chip=document.createElement('span');chip.className='chip';chip.textContent=w.toUpperCase()+' +'+pts;
+    $('#chips').prepend(chip);
+    m.textContent='Nice! "'+w.toUpperCase()+'" +'+pts;m.className='msg good';
+    navigator.vibrate&&navigator.vibrate([10,30,10]);
+  }
+  path=[];render();
+}
+// pointer handling: drag across cells, release to submit
+let dragging=false;
+function cellAt(x,y){const el=document.elementFromPoint(x,y);return el&&el.classList.contains('cell')?+el.dataset.i:null;}
+const board=$('#board');
+function down(e){dragging=true;path=[];const t=e.touches?e.touches[0]:e;const i=cellAt(t.clientX,t.clientY);if(i!=null)addCell(i);e.preventDefault();}
+function move(e){if(!dragging)return;const t=e.touches?e.touches[0]:e;const i=cellAt(t.clientX,t.clientY);if(i!=null)addCell(i);e.preventDefault();}
+function up(e){if(!dragging)return;dragging=false;submit();e.preventDefault();}
+board.addEventListener('touchstart',down,{passive:false});
+board.addEventListener('touchmove',move,{passive:false});
+board.addEventListener('touchend',up,{passive:false});
+board.addEventListener('mousedown',down);
+window.addEventListener('mousemove',move);
+window.addEventListener('mouseup',up);
+
+function tick(){
+  time--;const mm=(time/60|0),ss=String(time%60).padStart(2,'0');
+  $('#timer').textContent=mm+':'+ss;
+  $('#timer').classList.toggle('low',time<=30);
+  if(time<=0){clearInterval(timer);end();}
+}
+function end(){
+  $('#final').textContent=score;
+  $('#finalwords').textContent=found.size+' word'+(found.size===1?'':'s')+' found';
+  $('#over').classList.add('show');
+  if(window.kidsRound)kidsRound('boggle');
+}
+build();render();timer=setInterval(tick,1000);
+</script>
+</body>
+</html>

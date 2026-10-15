@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no"/>
+<meta name="theme-color" content="#2b6a55"/>
+<title>Word Connect</title>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=DM+Sans:wght@600;700&display=swap" rel="stylesheet">
+<style>
+  :root{--tile:#f6cf7d;--tile2:#eab24f;--tileink:#6b4415;--good:#4bbf74;--goodink:#fff;
+        --wheel:rgba(255,255,255,.16);--line:#ff9d3c;--ink:#fff;--soft:rgba(255,255,255,.85)}
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{margin:0;min-height:100dvh;color:var(--ink);font-family:'Baloo 2','DM Sans',system-ui,sans-serif;
+       background:linear-gradient(160deg,#3aa17e 0%,#2b6a55 55%,#234f43 100%);
+       display:flex;flex-direction:column;align-items:center;padding:env(safe-area-inset-top) 12px 14px;touch-action:none;overscroll-behavior:none}
+  .top{width:100%;max-width:460px;display:flex;align-items:center;justify-content:space-between;padding:6px 2px}
+  .back{color:var(--soft);text-decoration:none;font-weight:700;font-size:15px;padding:8px 4px}
+  h1{font-size:20px;margin:0;font-weight:800;letter-spacing:.3px}
+  .coins{background:rgba(0,0,0,.18);border-radius:20px;padding:5px 12px;font-weight:800;font-size:15px;color:#ffe08a}
+  /* interlocking crossword grid (Wordscapes-style) */
+  .slots{flex:1;width:100%;max-width:460px;display:flex;align-items:center;justify-content:center;padding:10px 0;overflow:auto}
+  .grid{display:grid;gap:4px;justify-content:center}
+  .gap{width:var(--cell);height:var(--cell)}
+  .box{width:var(--cell);height:var(--cell);border-radius:8px;background:rgba(0,0,0,.16);box-shadow:inset 0 -2px 0 rgba(0,0,0,.12);
+       display:flex;align-items:center;justify-content:center;font-weight:800;color:transparent;
+       font-size:calc(var(--cell) * .55);transition:transform .18s,background .18s,color .18s}
+  .box.fill{background:linear-gradient(#5fd089,var(--good));color:var(--goodink);box-shadow:0 3px 8px rgba(0,0,0,.2);animation:pop .3s}
+  @keyframes pop{0%{transform:scale(.5)}60%{transform:scale(1.15)}100%{transform:scale(1)}}
+  /* forming word pill */
+  .current{min-height:44px;display:flex;align-items:center;justify-content:center}
+  .pill{background:var(--tile);color:var(--tileink);font-weight:800;font-size:24px;letter-spacing:3px;
+        padding:6px 18px;border-radius:16px;box-shadow:0 3px 0 var(--tile2);min-height:0;opacity:0;transition:opacity .12s}
+  .pill.show{opacity:1}
+  .msg{min-height:20px;font-size:14px;font-weight:700;color:var(--soft)}.msg.bad{color:#ffd0d0}.msg.good{color:#d6ffe6}
+  /* letter wheel */
+  .wheelwrap{position:relative;width:270px;height:270px;margin:2px 0 10px;touch-action:none}
+  .tray{position:absolute;inset:22px;border-radius:50%;background:var(--wheel);box-shadow:inset 0 0 0 2px rgba(255,255,255,.12)}
+  svg.lines{position:absolute;inset:0;pointer-events:none}
+  .letter{position:absolute;width:60px;height:60px;margin:-30px 0 0 -30px;border-radius:16px;
+          background:linear-gradient(var(--tile),var(--tile2));color:var(--tileink);
+          display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:800;user-select:none;
+          box-shadow:0 4px 0 #c98f38,0 5px 10px rgba(0,0,0,.25);transition:transform .08s}
+  .letter.on{transform:scale(1.12);box-shadow:0 4px 0 #b97c2c,0 0 0 3px #fff6}
+  .ctrls{display:flex;gap:12px}
+  .btn{background:rgba(255,255,255,.14);color:#fff;border:none;border-radius:16px;padding:12px 20px;font-size:15px;font-weight:800;font-family:inherit;box-shadow:0 3px 0 rgba(0,0,0,.18)}
+  .btn.p{background:var(--tile);color:var(--tileink);box-shadow:0 3px 0 var(--tile2)}
+  .btn:active{transform:translateY(2px);box-shadow:none}
+  .over{position:fixed;inset:0;background:rgba(20,60,48,.95);display:none;flex-direction:column;align-items:center;justify-content:center;z-index:10;text-align:center;padding:24px}
+  .over.show{display:flex}.over .big{font-size:64px}.over h2{font-weight:800;margin:6px 0 4px}
+</style>
+</head>
+<body>
+  <div class="top"><a class="back" href="/#k/games">‹ Games</a><h1>🧩 Word Connect</h1><span class="coins" id="coins">⭐ 0</span></div>
+  <div class="slots" id="slots"><div class="grid" id="grid"></div></div>
+  <div class="current" id="current"><span class="pill" id="pill"></span></div>
+  <div class="msg" id="msg">Swipe the letters to make words!</div>
+  <div class="wheelwrap" id="wheel"><div class="tray"></div><svg class="lines" id="lines" viewBox="0 0 270 270"><polyline id="poly" fill="none" stroke="var(--line)" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" points=""/></svg></div>
+  <div class="ctrls"><button class="btn" id="shuffle">↻ Shuffle</button><button class="btn p" id="new">New puzzle</button></div>
+  <div class="over" id="over"><div class="big">🎉</div><h2>Nice one!</h2><button class="btn p" style="margin-top:10px" onclick="setup()">Next puzzle</button><a class="back" style="margin-top:14px" href="/#k/games">Back to games</a></div>
+<script src="/kids-games/words.js"></script>
+<script src="/kids-games/sprig-link.js"></script>
+<script>
+const $=s=>document.querySelector(s);
+// keep it kid-appropriate: skip abbreviations / odd tokens that slip through the word list
+// words.js ships a shared BLOCKLIST of proper nouns / brands / abbreviations that
+// survive the google-10k filter (IAN, CRAIG, IRS, CPU...). Allowing 3-letter answers
+// made that filtering essential — most 3-letter tokens in the raw list are acronyms.
+const BLOCK=new Set([...(window.BLOCKLIST||[])].map(w=>w.toUpperCase()));
+['GOTO','PREV','BLOG','SRC','ASCII','ETH','JPG','PNG'].forEach(w=>BLOCK.add(w));
+let base=[],targets=[],found=new Set(),coins=0,pos=[],path=[],dragging=false;
+
+const rnd=n=>Math.floor(Math.random()*n);
+function canForm(w,pool){const c={};for(const ch of pool)c[ch]=(c[ch]||0)+1;for(const ch of w){if(!c[ch])return false;c[ch]--;}return true;}
+// Young players: puzzles grade 3 -> 4 -> 5 letters so there's always an easy way in.
+const MIN_LEN=3, MAX_LEN=5, WANT={3:2,4:2,5:2};
+function subWords(letters){const out=[];for(const w of window.WORDS){const W=w.toUpperCase();if(w.length>=MIN_LEN&&w.length<=MAX_LEN&&!BLOCK.has(W)&&canForm(W,letters))out.push(W);}return out;}
+// Take a spread across lengths rather than "longest first", which used to give 4/5/5.
+function pickTargets(subs){
+  const byLen={};subs.forEach(w=>{(byLen[w.length]=byLen[w.length]||[]).push(w);});
+  const out=[];
+  for(const len of [3,4,5]){
+    const pool=(byLen[len]||[]).slice();
+    for(let i=pool.length-1;i>0;i--){const j=rnd(i+1);[pool[i],pool[j]]=[pool[j],pool[i]];}
+    out.push(...pool.slice(0,WANT[len]));
+  }
+  return out;
+}
+function pickBase(){
+  for(let t=0;t<90;t++){
+    const b=window.BASE_WORDS[rnd(Math.min(window.BASE_WORDS.length,3500))].toUpperCase(); // bias to common words
+    if(BLOCK.has(b))continue;
+    const big=subWords(b.split(''));
+    const have={};big.forEach(w=>have[w.length]=(have[w.length]||0)+1);
+    if((have[3]||0)>=WANT[3]&&(have[4]||0)>=WANT[4]&&(have[5]||0)>=WANT[5])return {letters:b.split(''),subs:big};
+  }
+  return {letters:'PLANTS'.split(''),subs:subWords('PLANTS'.split(''))};
+}
+// --- crossword layout -------------------------------------------------
+// Lay the answers out interlocking on shared letters, across and down, the way
+// Wordscapes does — rather than as separate rows of boxes.
+const GN=15, GMID=7;
+let cells=new Map();                       // "r,c" -> {ch, words:Set}
+const gkey=(r,c)=>r+','+c;
+
+function layout(words){
+  cells=new Map();const placed=[];
+  const order=words.slice().sort((a,b)=>b.length-a.length);
+
+  function fits(w,r,c,dir){
+    const dr=dir==='D'?1:0,dc=dir==='A'?1:0;
+    // the cells immediately before and after the word must be free,
+    // otherwise two answers run together into one longer string
+    if(cells.has(gkey(r-dr,c-dc))||cells.has(gkey(r+dr*w.length,c+dc*w.length)))return -1;
+    let crosses=0;
+    for(let i=0;i<w.length;i++){
+      const rr=r+dr*i,cc=c+dc*i;
+      if(rr<0||cc<0||rr>=GN||cc>=GN)return -1;
+      const cell=cells.get(gkey(rr,cc));
+      if(cell){ if(cell.ch!==w[i])return -1; crosses++; }
+      else{ // a new cell must not brush against another word sideways
+        if(cells.has(gkey(rr+dc,cc+dr))||cells.has(gkey(rr-dc,cc-dr)))return -1;
+      }
+    }
+    return crosses;
+  }
+  function put(w,r,c,dir){
+    const dr=dir==='D'?1:0,dc=dir==='A'?1:0;
+    for(let i=0;i<w.length;i++){
+      const k=gkey(r+dr*i,c+dc*i);
+      const cell=cells.get(k)||{ch:w[i],words:new Set()};
+      cell.words.add(w);cells.set(k,cell);
+    }
+    placed.push({word:w,r,c,dir});
+  }
+
+  const first=order[0];
+  put(first,GMID,GMID-Math.floor(first.length/2),'A');
+
+  for(let n=1;n<order.length;n++){
+    const w=order[n];let best=null;
+    for(const p of placed){
+      const pdr=p.dir==='D'?1:0,pdc=p.dir==='A'?1:0;
+      for(let i=0;i<p.word.length;i++){
+        const rr=p.r+pdr*i,cc=p.c+pdc*i;
+        for(let j=0;j<w.length;j++){
+          if(w[j]!==p.word[i])continue;
+          const dir=p.dir==='A'?'D':'A';
+          const sr=dir==='D'?rr-j:rr, sc=dir==='A'?cc-j:cc;
+          const cr=fits(w,sr,sc,dir);
+          if(cr>0&&(!best||cr>best.cr))best={r:sr,c:sc,dir,cr};
+        }
+      }
+    }
+    if(!best)return false;                 // unlayoutable — caller retries
+    put(w,best.r,best.c,best.dir);
+  }
+  return true;
+}
+
+function setup(){
+  $('#over').classList.remove('show');
+  // retry until we get a set of words that actually interlocks
+  for(let attempt=0;attempt<40;attempt++){
+    const {letters,subs}=pickBase();
+    const picked=pickTargets(subs);
+    if(picked.length<4)continue;
+    if(!layout(picked))continue;
+    base=letters;
+    targets=picked.slice().sort((a,b)=>a.length-b.length||a.localeCompare(b));
+    found=new Set();
+    renderSlots();placeWheel();setMsg('Swipe the letters to make words!','');
+    return;
+  }
+  // extremely unlikely fallback
+  base='PLANTS'.split('');targets=['ANT','PAN','PLAN','SLANT'];found=new Set();
+  layout(targets);renderSlots();placeWheel();setMsg('Swipe the letters to make words!','');
+}
+function setMsg(t,cls){const m=$('#msg');m.textContent=t;m.className='msg '+(cls||'');}
+function renderSlots(){
+  const g=$('#grid');g.innerHTML='';
+  // crop to the bounding box of what was actually placed
+  let r0=99,c0=99,r1=-1,c1=-1;
+  for(const k of cells.keys()){const[r,c]=k.split(',').map(Number);
+    r0=Math.min(r0,r);c0=Math.min(c0,c);r1=Math.max(r1,r);c1=Math.max(c1,c);}
+  const rows=r1-r0+1, cols=c1-c0+1;
+  // shrink cells so a wide puzzle still fits a phone
+  const cell=Math.max(22,Math.min(38,Math.floor((Math.min(window.innerWidth-40,440)-(cols-1)*4)/cols)));
+  g.style.setProperty('--cell',cell+'px');
+  g.style.gridTemplateColumns=`repeat(${cols},${cell}px)`;
+  for(let r=r0;r<=r1;r++)for(let c=c0;c<=c1;c++){
+    const cellData=cells.get(gkey(r,c));
+    if(!cellData){const d=document.createElement('div');d.className='gap';g.appendChild(d);continue;}
+    const b=document.createElement('div');b.className='box';
+    b.dataset.words=[...cellData.words].join(' ');
+    b.textContent=cellData.ch;g.appendChild(b);
+  }
+}
+function reveal(w){document.querySelectorAll('.box').forEach(b=>{
+  if((b.dataset.words||'').split(' ').includes(w))b.classList.add('fill');});}
+function placeWheel(){
+  const wheel=$('#wheel');[...wheel.querySelectorAll('.letter')].forEach(e=>e.remove());pos=[];
+  const cx=135,cy=135,r=96,n=base.length;
+  const order=base.map((_,i)=>i);for(let i=order.length-1;i>0;i--){const j=rnd(i+1);[order[i],order[j]]=[order[j],order[i]];}
+  order.forEach((bi,k)=>{
+    const ang=-Math.PI/2+k*2*Math.PI/n,x=cx+r*Math.cos(ang),y=cy+r*Math.sin(ang);
+    const el=document.createElement('div');el.className='letter';el.textContent=base[bi];el.style.left=x+'px';el.style.top=y+'px';
+    wheel.appendChild(el);pos.push({x,y,ch:base[bi],el});
+  });
+}
+function nearest(px,py){let best=-1,bd=1e9;pos.forEach((p,i)=>{const d=(px-p.x)**2+(py-p.y)**2;if(d<40*40&&d<bd){bd=d;best=i;}});return best;}
+function localXY(e){const t=e.touches?e.touches[0]:e,r=$('#wheel').getBoundingClientRect();return[(t.clientX-r.left)*270/r.width,(t.clientY-r.top)*270/r.height];}
+function updateLine(px,py){
+  const pts=path.map(i=>pos[i].x+','+pos[i].y);if(px!=null)pts.push(px+','+py);
+  $('#poly').setAttribute('points',pts.join(' '));
+  const w=path.map(i=>pos[i].ch).join('');const pill=$('#pill');pill.textContent=w;pill.classList.toggle('show',!!w);
+  pos.forEach((p,i)=>p.el.classList.toggle('on',path.includes(i)));
+}
+function down(e){dragging=true;path=[];const[x,y]=localXY(e);const i=nearest(x,y);if(i>=0)path.push(i);updateLine(x,y);e.preventDefault();}
+function move(e){if(!dragging)return;const[x,y]=localXY(e);const i=nearest(x,y);
+  if(i>=0&&!path.includes(i))path.push(i);else if(i>=0&&path.length>=2&&path[path.length-2]===i)path.pop();
+  updateLine(x,y);e.preventDefault();}
+function up(e){if(!dragging)return;dragging=false;submit();path=[];updateLine();$('#poly').setAttribute('points','');e.preventDefault();}
+function submit(){
+  const w=path.map(i=>pos[i].ch).join('');
+  if(w.length<3){return;}
+  if(found.has(w)){setMsg(w+' — already found','bad');}
+  else if(targets.includes(w)){found.add(w);reveal(w);setMsg('Nice! '+w,'good');navigator.vibrate&&navigator.vibrate([10,30,10]);
+    if(found.size===targets.length){setTimeout(()=>$('#over').classList.add('show'),450);if(window.kidsRound)kidsRound('wordconnect');}}
+  else if(window.WORDS.has(w.toLowerCase())&&!BLOCK.has(w)){coins++;$('#coins').textContent='⭐ '+coins;setMsg('Bonus word! ⭐+1','good');navigator.vibrate&&navigator.vibrate(15);}
+  else{setMsg('Not a word','bad');}
+}
+const wheel=$('#wheel');
+wheel.addEventListener('touchstart',down,{passive:false});wheel.addEventListener('touchmove',move,{passive:false});wheel.addEventListener('touchend',up,{passive:false});
+wheel.addEventListener('mousedown',down);window.addEventListener('mousemove',move);window.addEventListener('mouseup',up);
+$('#shuffle').addEventListener('click',placeWheel);$('#new').addEventListener('click',setup);
+setup();
+</script>
+</body>
+</html>

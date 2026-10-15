@@ -54,6 +54,8 @@ if (process.env.BASIC_AUTH_USER && process.env.BASIC_AUTH_PASS) {
     res.set('WWW-Authenticate', `Basic realm="${APP_NAME}", charset="UTF-8"`).status(401).send('Username and password needed');
   });
 }
+const kids = require('./src/kids');
+kids.mount(app, { brains, phase: 'early' });      // /hooks/:slug — integration endpoints (token, never proxied)
 app.use(express.json({ limit: '1mb' }));
 app.use(cookieParser());
 
@@ -84,6 +86,7 @@ app.use('/api', async (req, res, next) => {
   next();
 });
 app.use('/api/pet', require('./src/routes/pet')(brains));
+app.use('/api/village', require('./src/routes/village'));
 app.use('/api/goals', require('./src/routes/goals'));
 app.use('/api/checkins', require('./src/routes/checkins'));
 app.use('/api/streak', require('./src/routes/streak'));
@@ -103,6 +106,7 @@ app.use('/api/voice', require('./src/routes/voice'));
 app.use('/api/fitness', require('./src/routes/fitness'));
 app.use('/api/reads', require('./src/routes/reads'));
 app.use('/api/agent', require('./src/routes/agent')(brains));
+kids.mount(app, { brains, phase: 'late' });       // /api/kids, /api/family
 
 // HTML is never cached; versioned assets can be.
 // Feature modules (kids, family) are plain files in public/js/{kids,family} and public/css/kids — listed here
@@ -156,6 +160,7 @@ initDb()
     setInterval(() => engine.purge().catch(() => {}), 6 * 3600 * 1000);
     require('./src/voice/ingest').start();
     require('./src/agentChecks').start(brains);
+    kids.startAll();
   })
   .then(() => app.listen(PORT, () => { console.log(`[pippin] ${APP_VERSION} listening on :${PORT}`); }))
   .catch((e) => { console.error('[fatal]', e); process.exit(1); });

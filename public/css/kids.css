@@ -1,0 +1,39 @@
+/* Kids' experience: bigger type, big tap targets, bright tiles. Shared by every kids module. */
+body.kid-mode { font-size: 18px; }
+body.kid-mode .btn { min-height: 52px; font-size: 1.05rem; border-radius: 16px; }
+.btn.big, .big { font-size: 1.15rem; }
+.kids { padding-bottom: 12px; }
+.kid-hello { display: flex; align-items: center; gap: 10px; margin: 4px 0 10px; }
+.kid-hello h1 { flex: 1; margin: 0; font-size: 1.5rem; }
+.kid-acorns { background: #fff; border-radius: 999px; padding: 8px 14px; font-weight: 700; text-decoration: none; color: inherit; box-shadow: 0 2px 8px #0001; }
+.kid-room { position: relative; border-radius: 22px; overflow: hidden; margin-bottom: 14px; box-shadow: 0 4px 16px #0001; cursor: pointer; }
+.kid-room .room { display: block; }
+.kid-jars { position: absolute; left: 8px; right: 8px; bottom: 6px; display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; }
+.kid-jar { display: flex; flex-direction: column; align-items: center; text-decoration: none; color: #3b3a36; font-size: .72rem; font-weight: 700;
+  background: #ffffffcc; border-radius: 12px; padding: 4px 6px 2px; }
+.kid-card { border-radius: 20px; }
+.energy.big { height: 18px; border-radius: 9px; }
+.energy.big > div { border-radius: 9px; }
+.kid-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin: 14px 0; }
+@media (min-width: 520px) { .kid-grid { grid-template-columns: repeat(3, 1fr); } }
+.kid-tile { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; min-height: 112px;
+  border-radius: 22px; background: color-mix(in srgb, var(--c, #6f9f5c) 18%, #fff); border: 3px solid color-mix(in srgb, var(--c, #6f9f5c) 45%, #fff);
+  text-decoration: none; color: #2e2b26; font-size: 1.05rem; text-align: center; padding: 10px; transition: transform .1s; }
+.kid-tile:active { transform: scale(.96); }
+.kid-tile .em { font-size: 2.6rem; line-height: 1; }
+.kid-badge:not(:empty) { position: absolute; top: 8px; right: 10px; background: #e05a4f; color: #fff; border-radius: 999px; min-width: 26px; height: 26px;
+  font-size: .85rem; font-weight: 700; display: flex; align-items: center; justify-content: center; padding: 0 6px; }
+.kid-head { display: flex; align-items: center; gap: 8px; margin: 2px 0 12px; }
+.kid-head h1 { margin: 0; font-size: 1.45rem; }
+.kid-back { display: inline-flex; align-items: center; justify-content: center; width: 48px; height: 48px; border-radius: 50%; background: #fff;
+  text-decoration: none; color: inherit; font-size: 2rem; line-height: 1; box-shadow: 0 2px 8px #0001; flex: none; }
+.kid-story { font-size: 1.1rem; line-height: 1.6; }
+.tabs.kid-tabs a { font-size: .8rem; }
+.tabs.kid-tabs .ic { font-size: 1.6rem; }
+.kid-big-btn { display: block; width: 100%; min-height: 64px; border-radius: 20px; font-size: 1.2rem; }
+.kid-pill { display: inline-block; padding: 4px 12px; border-radius: 999px; background: #fff; font-weight: 600; }
+
+/* What's new tour */
+.wn-body p { margin: .5em 0; line-height: 1.5; }
+.wn-list { padding-left: 1.2em; margin: .4em 0; }
+.wn-list li { margin: .45em 0; line-height: 1.45; }

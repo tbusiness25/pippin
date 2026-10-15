@@ -1,0 +1,28 @@
+/* Adult family features: calendar (cal-), briefing, digest (dg-). */
+
+/* ---------- Calendar ---------- *//* ---------- Calendar ---------- */
+.cal-head b { font-family: var(--display); font-size: 1.1rem; }
+.cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-top: 8px; }
+.cal-wd { text-align: center; font-size: .75rem; color: var(--muted); font-weight: 600; padding: 2px 0; }
+.cal-cell { min-height: 46px; border: 1.5px solid transparent; border-radius: 10px; background: var(--bg); padding: 4px 2px;
+  display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.cal-cell.has { background: color-mix(in srgb, var(--moss) 12%, var(--card)); }
+.cal-cell.is-today { border-color: var(--terracotta); }
+.cal-num { font-size: .9rem; font-weight: 600; }
+.cal-dots { display: flex; gap: 2px; }
+.cal-dots i { width: 6px; height: 6px; border-radius: 50%; background: var(--moss); }
+.cal-date { margin: 16px 0 8px; font-size: 1rem; scroll-margin-top: 12px; }
+.cal-date.is-today { color: var(--terracotta); }
+.cal-event { display: flex; gap: 12px; align-items: center; padding: 12px 14px; }
+.cal-time { flex: 0 0 76px; font-size: .85rem; color: var(--muted); font-weight: 600; }
+
+/* ---------- Briefing + digest ---------- */
+.brief-body h3 { margin-top: 1em; }
+.brief-peek { overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.dg-day summary { cursor: pointer; list-style: none; min-height: 32px; }
+.dg-day summary::-webkit-details-marker { display: none; }
+.dg-pick { border-top: 1px solid var(--line); padding: 12px 0 4px; }
+.dg-pick a { color: inherit; }
+.dg-pick p { margin: .4em 0; line-height: 1.5; }
+a.chip { color: var(--ink); } a.chip.on { color: #fff; }
+.co-prac-row .co-scale { flex: 1 1 200px; max-width: 280px; }

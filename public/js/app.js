@@ -183,6 +183,16 @@ window.APP = window.APP || (window.__BUILD__ && window.__BUILD__.appName) || "Ap
       if (!state.pet) return renderHatch();
       F.CAT_EMOJI = CAT_EMOJI;
       const [key, ...rest] = r.split('/');
+      // A child account only ever sees the kids' experience (plus the sprig's shop and adventure journal).
+      if (state.user.role === 'child') {
+        document.body.classList.add('kid-mode');
+        if (key === 'shop' || key === 'journal') { F.kids?.setKidTabs?.(''); return (F.routes[key] || renderJournal)(rest.join('/')); }
+        if (key !== 'k') { location.hash = '#k'; return; }
+        return F.routes.k(rest.join('/'));
+      }
+      document.body.classList.remove('kid-mode');
+      F.kids?.restoreAdultTabs?.();
+      $tabs.querySelector('[data-tab="family"]')?.classList.toggle('hidden', state.user.role !== 'adult');
       const builtIn = { home: renderHome, coach: renderCoach, goals: renderGoals, journal: renderJournal, me: renderMe };
       (F.routes[key] || builtIn[key] || renderHome)(rest.join('/'));
     } catch (e) {
@@ -661,6 +671,10 @@ window.APP = window.APP || (window.__BUILD__ && window.__BUILD__.appName) || "Ap
         ${F.lock().hasPin() ? '<button class="btn ghost" id="lockNow">Lock now</button>' : '<button class="btn secondary" id="lockSet">Turn on (confirm your PIN)</button>'}
         <button class="btn ghost" id="pinChg">Change PIN</button></div>
       <div class="card"><h2>Coach</h2><p class="small">Connected to <b>${esc(s.brain.label)}</b>${s.brain.capabilities?.calendar ? ' — can see your calendar, email and tasks.' : '.'}</p></div>
+      ${s.isParent && (s.members || []).length ? `<div class="card"><h2>🔑 Family PINs</h2>
+        <p class="small muted">Reset a child’s PIN if they’ve forgotten it. You’ll confirm with your own PIN. Adults change their own PIN in their profile.</p>
+        ${s.members.map((m) => `<div class="row" style="padding:6px 0;border-top:1px solid var(--line)"><div class="grow"><b>${esc(m.name)}</b> <span class="small muted">${m.role === 'child' ? 'child' : 'adult — changes their own PIN'}</span></div>
+          ${m.role === 'child' ? `<button class="btn ghost" data-setpin="${esc(m.id)}" data-name="${esc(m.name)}">Set PIN</button>` : ''}</div>`).join('')}</div>` : ''}
       ${s.isOwner ? `<div class="card"><h2>👪 Household</h2><p class="small muted">Add someone to this server. They get their own sprig, and their check-ins and chats stay private to them.</p>
         <div class="row"><input id="hn" placeholder="Name" maxlength="40"><input id="hp" placeholder="PIN" inputmode="numeric" maxlength="8" style="max-width:110px"></div>
         <button class="btn secondary block" id="hAdd" style="margin-top:10px">Add person</button></div>` : ''}
@@ -700,6 +714,19 @@ window.APP = window.APP || (window.__BUILD__ && window.__BUILD__.appName) || "Ap
         };
       });
     });
+    document.querySelectorAll('[data-setpin]').forEach((b) => { b.onclick = () => {
+      sheet(`<h1>New PIN for ${esc(b.dataset.name)}</h1>
+        <div class="field"><label for="sp1">Your own PIN (to confirm)</label><input id="sp1" type="password" inputmode="numeric" maxlength="8"></div>
+        <div class="field"><label for="sp2">New PIN for ${esc(b.dataset.name)} (4–8 digits)</label><input id="sp2" type="password" inputmode="numeric" maxlength="8"></div>
+        <button class="btn block" id="sp3">Set PIN</button>`, (el, close) => {
+        el.querySelector('#sp3').onclick = async () => {
+          try {
+            const r = await api(`/api/auth/set-pin/${encodeURIComponent(b.dataset.setpin)}`, { body: { my_pin: el.querySelector('#sp1').value, new_pin: el.querySelector('#sp2').value } });
+            close(); toast(`${r.name}’s PIN is changed`);
+          } catch (e) { toast(e.message); }
+        };
+      });
+    }; });
     document.getElementById('pinChg').onclick = () => {
       sheet(`<h1>Change PIN</h1><div class="field"><label for="cp0">Current PIN</label><input id="cp0" type="password" inputmode="numeric" maxlength="8"></div>
         <div class="field"><label for="cp1">New PIN (4–8 digits)</label><input id="cp1" type="password" inputmode="numeric" maxlength="8"></div>

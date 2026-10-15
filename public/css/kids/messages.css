@@ -1,0 +1,31 @@
+/* 💬 Messages thread and ⌨️ typing practice (public/js/kids/hopenotes.js, typing.js, family/messages.js) */
+.kn-card { display: flex; flex-direction: column; gap: 10px; }
+.kn-thread { display: flex; flex-direction: column; gap: 10px; max-height: 52vh; overflow-y: auto; padding: 4px 2px; }
+.kn-msg { max-width: 82%; display: flex; flex-direction: column; }
+.kn-msg.mine { align-self: flex-end; align-items: flex-end; }
+.kn-msg.theirs { align-self: flex-start; align-items: flex-start; }
+.kn-who { font-size: .8rem; color: var(--muted, #6b7280); margin: 0 6px 2px; }
+.kn-bubble { padding: 10px 14px; border-radius: 18px; background: var(--card-2, #f3efe8); color: var(--ink, #1f2328); white-space: pre-wrap; word-break: break-word; font-size: 1.05rem; line-height: 1.35; }
+.kn-msg.mine .kn-bubble { background: var(--accent, #e07a8a); color: #fff; border-bottom-right-radius: 6px; }
+.kn-msg.theirs .kn-bubble { border-bottom-left-radius: 6px; }
+.kn-bubble audio { max-width: 240px; }
+.kn-time { font-size: .72rem; color: var(--muted, #6b7280); margin: 2px 6px 0; }
+.kn-del { background: none; border: 0; color: var(--muted, #6b7280); cursor: pointer; padding: 0 2px; font-size: .8rem; }
+.kn-emoji { display: flex; flex-wrap: wrap; gap: 4px; }
+.kn-emoji button { font-size: 1.35rem; line-height: 1; padding: 6px 4px; min-width: 40px; min-height: 40px; background: none; border: 0; border-radius: 10px; cursor: pointer; }
+.kn-emoji button:active { background: var(--card-2, #f3efe8); }
+#knText, #pmText { width: 100%; box-sizing: border-box; font: inherit; font-size: 1.05rem; padding: 10px; border-radius: 12px; border: 1px solid var(--line, #d9d4ca); }
+
+.kt-list { display: flex; flex-direction: column; gap: 8px; margin: 10px 0; }
+.kt-lesson { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; text-align: left; padding: 14px; min-height: 60px; border-radius: 14px; border: 1px solid var(--line, #d9d4ca); background: var(--card, #fff); font: inherit; cursor: pointer; }
+.kt-target { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 1.25rem; line-height: 1.7; white-space: pre-wrap; padding: 14px; border-radius: 14px; background: var(--card-2, #f3efe8); }
+.kt-target .ok { color: #2f7d4a; }
+.kt-target .bad { color: #b3261e; background: #f9d6d2; border-radius: 3px; }
+.kt-target .cur { border-bottom: 3px solid var(--accent, #e07a8a); }
+.kt-input { width: 100%; box-sizing: border-box; margin-top: 12px; font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 1.2rem; padding: 14px; border-radius: 14px; border: 2px solid var(--line, #d9d4ca); }
+.kt-recent { padding: 4px 0; border-top: 1px solid var(--line, #d9d4ca); }
+.kt-prompts { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; margin: 10px 0; }
+.kt-prompts .kj-pill { text-align: left; white-space: normal; }
+.kt-ex { width: 100%; box-sizing: border-box; font: inherit; font-size: 1.1rem; line-height: 1.45; padding: 12px; border-radius: 14px; border: 1px solid var(--line, #d9d4ca); }
+.kt-old { padding: 8px 0; border-top: 1px solid var(--line, #d9d4ca); }
+.kt-old p { white-space: pre-wrap; margin: 4px 0 0; }

@@ -1,0 +1,47 @@
+/* Explore → 💷 Money */
+.mn { --m1: #2a78d6; --m2: #eb6834; --m3: #1baf7a; --m4: #eda100; --m5: #e87ba4; --good: #0ca30c; --warn: #fab219; --bad: #d03b3b; }
+@media (prefers-color-scheme: dark) { .mn { --m1: #3987e5; --m2: #d95926; --m3: #199e70; --m4: #c98500; --m5: #d55181; } }
+body.mn-wide main { max-width: 860px; }
+.mn .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 14px; }
+.mn .kpi { background: var(--card); border-radius: 16px; padding: 12px 14px; box-shadow: var(--shadow); }
+.mn .kpi .v { font: 700 1.45rem/1.1 var(--display); margin-top: 2px; }
+.mn .kpi .s { font-size: .78rem; color: var(--muted); margin-top: 3px; }
+.mn .pos { color: var(--good); } .mn .neg { color: var(--bad); }
+.mn .st { display: inline-flex; align-items: center; gap: 5px; font-size: .8rem; font-weight: 600; }
+.mn .st i { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+.mn table.mt { width: 100%; border-collapse: collapse; font-size: .9rem; }
+.mn table.mt td, .mn table.mt th { padding: 6px 4px; border-bottom: 1px solid var(--line); text-align: right; white-space: nowrap; }
+.mn table.mt td:first-child, .mn table.mt th:first-child { text-align: left; white-space: normal; }
+.mn table.mt tr.tot td { font-weight: 700; border-bottom: 0; }
+.mn .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; }
+.mn .fld { display: flex; flex-direction: column; gap: 3px; margin-bottom: 8px; }
+.mn .fld span { font-size: .78rem; color: var(--muted); }
+.mn .fld input, .mn .fld select { padding: 8px 10px; }
+.mn .inline { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.mn .line { display: flex; align-items: center; gap: 8px; padding: 8px 0; border-top: 1px solid var(--line); }
+.mn .line:first-child { border-top: 0; }
+.mn .line .amt { font-weight: 700; white-space: nowrap; }
+.mn .bar { height: 8px; border-radius: 4px; background: var(--line); overflow: hidden; }
+.mn .bar > i { display: block; height: 100%; border-radius: 4px; }
+.mn .stack { display: flex; height: 26px; border-radius: 8px; overflow: hidden; gap: 2px; }
+.mn .stack > i { display: block; height: 100%; }
+.mn .legend { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: .78rem; color: var(--muted); margin-top: 6px; }
+.mn .legend b { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 4px; vertical-align: -1px; }
+.mn .step { display: flex; gap: 12px; padding: 12px 0; border-top: 1px solid var(--line); }
+.mn .step:first-child { border-top: 0; }
+.mn .step .n { flex: none; width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; font-weight: 700; color: #fff; }
+.mn .acct { border-top: 1px solid var(--line); padding: 10px 0; }
+.mn .acct:first-child { border-top: 0; }
+.mn .muted-note { font-size: .78rem; color: var(--muted); line-height: 1.45; }
+.mn .chart { position: relative; }
+.mn .chart svg { display: block; width: 100%; height: auto; }
+.mn .chart text { font: 11px var(--font); fill: var(--muted); }
+.mn .tt { position: absolute; pointer-events: none; background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 6px 9px; font-size: .8rem; box-shadow: 0 4px 16px #0002; display: none; z-index: 5; white-space: nowrap; }
+.mn details > summary { cursor: pointer; font-weight: 600; }
+.mn .pill { display: inline-block; font-size: .72rem; padding: 2px 8px; border-radius: 999px; background: var(--bg); border: 1px solid var(--line); margin-left: 4px; }
+/* demo banner (DEMO_MODE servers) */
+.demo-bar { position: sticky; top: 0; z-index: 40; display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: center; justify-content: center;
+  padding: 8px 12px; background: #2a3b55; color: #fff; font-size: .82rem; text-align: center; }
+.demo-bar .demo-who { display: inline-flex; gap: 4px; flex-wrap: wrap; align-items: center; }
+.demo-bar button { background: rgba(255,255,255,.15); color: #fff; border: 1px solid rgba(255,255,255,.35); border-radius: 999px; padding: 3px 10px; font-size: .8rem; cursor: pointer; }
+.demo-bar button.on { background: #fff; color: #2a3b55; font-weight: 700; }
