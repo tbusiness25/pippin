@@ -1,0 +1,8 @@
+/* Explore → 🌬️ Breathwork */
+.bw-stage { text-align: center; }
+.bw-stage .row { text-align: left; }
+.bw-sub { min-height: 1.4em; color: var(--muted); font-size: .9rem; margin-top: 4px; }
+.bw-orb { transition-property: transform; transition-timing-function: ease-in-out; }
+.bw-cue { min-height: 2.6em; font-size: 1rem; padding: 0 8px; }
+.bw-tap { min-height: 72px; font-size: 1.15rem; margin: 8px 0; }
+@media (prefers-color-scheme: dark) { .bw-orb { background: radial-gradient(circle, #9fd1c9, #4f8f86); color: #08302b; } }

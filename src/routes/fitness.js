@@ -24,10 +24,24 @@ const wrap = (fn) => async (req, res) => {
 const quiet = (p) => p.catch(() => null);   // optional extras: a failure shouldn't break the screen
 
 // ---------- status + Garmin ----------
+// Sparky's scheduler only syncs a provider hourly when its sync_frequency is 'hourly'. A new link starts as 'manual',
+// so the watch would say "syncs every hour" and never sync on its own. Set it once per person (cached per process).
+const hourlyDone = new Set();
+async function ensureHourly(uid) {
+  if (hourlyDone.has(uid)) return;
+  const list = await sparky.call(uid, 'GET', '/api/external-providers/');
+  const rows = Array.isArray(list) ? list : (list?.providers || list?.data || []);
+  const g = rows.find((p) => p.provider_type === 'garmin');
+  if (!g) return;
+  if (g.sync_frequency !== 'hourly') await sparky.call(uid, 'PUT', `/api/external-providers/${g.id}`, { sync_frequency: 'hourly' });
+  hourlyDone.add(uid);
+}
+
 router.get('/status', async (req, res) => {
   if (!sparky.available()) return res.json({ ok: true, available: false });
   try {
     const garmin = await sparky.call(req.uid, 'GET', '/api/integrations/garmin/status');
+    if (garmin?.isLinked) await ensureHourly(req.uid).catch((e) => console.warn('[fitness] hourly sync setting:', e.message));
     res.json({ ok: true, available: true, garmin, syncing: syncing.has(req.uid) });
   } catch (e) { res.json({ ok: true, available: true, error: e.message }); }
 });
@@ -47,13 +61,13 @@ router.post('/garmin/login', wrap(async (req) => {
   if (!email || !password) throw Object.assign(new Error('Enter your Garmin email and password'), { status: 400 });
   // Passed straight through to the backend, which keeps only encrypted Garmin tokens — never the password.
   const r = await sparky.call(req.uid, 'POST', '/api/integrations/garmin/login', { email: String(email), password: String(password) }, { timeout: 60000 });
-  if (r?.status === 'success') backgroundSync(req.uid, 30);
+  if (r?.status === 'success') { await ensureHourly(req.uid).catch(() => {}); backgroundSync(req.uid, 30); }
   return { status: r?.status, client_state: r?.client_state };
 }));
 router.post('/garmin/mfa', wrap(async (req) => {
   const { client_state, mfa_code } = req.body || {};
   const r = await sparky.call(req.uid, 'POST', '/api/integrations/garmin/resume_login', { client_state, mfa_code: String(mfa_code || '').trim() }, { timeout: 60000 });
-  if (r?.status === 'success') backgroundSync(req.uid, 30);
+  if (r?.status === 'success') { await ensureHourly(req.uid).catch(() => {}); backgroundSync(req.uid, 30); }
   return { status: r?.status };
 }));
 router.post('/garmin/sync', wrap(async (req) => { backgroundSync(req.uid, Math.min(365, Math.max(1, +(req.body?.days) || 3))); return { started: true }; }));

@@ -54,10 +54,13 @@ if (process.env.BASIC_AUTH_USER && process.env.BASIC_AUTH_PASS) {
     res.set('WWW-Authenticate', `Basic realm="${APP_NAME}", charset="UTF-8"`).status(401).send('Username and password needed');
   });
 }
+const demo = require('./src/demo');
 const kids = require('./src/kids');
 kids.mount(app, { brains, phase: 'early' });      // /hooks/:slug — integration endpoints (token, never proxied)
 app.use(express.json({ limit: '1mb' }));
 app.use(cookieParser());
+app.use('/api', demo.autoLogin);   // DEMO_MODE only: visitors are signed in as the demo person
+demo.mount(app);
 
 app.get('/sw.js', (req, res) => {
   const sw = brand(fs.readFileSync(path.join(PUBLIC, 'sw.js'), 'utf8'));
@@ -65,7 +68,7 @@ app.get('/sw.js', (req, res) => {
 });
 app.get('/js/build-info.js', (req, res) => {
   res.type('application/javascript').setHeader('Cache-Control', 'no-cache')
-    .send(`window.__BUILD__=${JSON.stringify({ version: APP_VERSION, sw: SW_VERSION, appName: APP_NAME, links: EXPLORE_LINKS, features: FEATURES })};window.APP=window.__BUILD__.appName;`);
+    .send(`window.__BUILD__=${JSON.stringify({ version: APP_VERSION, sw: SW_VERSION, appName: APP_NAME, links: EXPLORE_LINKS, demo: demo.on(), features: FEATURES })};window.APP=window.__BUILD__.appName;`);
 });
 app.get('/api/health', async (req, res) => {
   try { await pool.query('SELECT 1'); res.json({ ok: true, version: APP_VERSION, brain: brains.default.name }); }
@@ -105,6 +108,7 @@ app.use('/api/chat', require('./src/routes/chat'));
 app.use('/api/voice', require('./src/routes/voice'));
 app.use('/api/fitness', require('./src/routes/fitness'));
 app.use('/api/reads', require('./src/routes/reads'));
+app.use('/api/breathwork', require('./src/routes/breathwork'));
 app.use('/api/agent', require('./src/routes/agent')(brains));
 kids.mount(app, { brains, phase: 'late' });       // /api/kids, /api/family
 
@@ -162,5 +166,5 @@ initDb()
     require('./src/agentChecks').start(brains);
     kids.startAll();
   })
-  .then(() => app.listen(PORT, () => { console.log(`[pippin] ${APP_VERSION} listening on :${PORT}`); }))
+  .then(() => app.listen(PORT, () => { console.log(`[pippin] ${APP_VERSION} listening on :${PORT}`); demo.start(); }))
   .catch((e) => { console.error('[fatal]', e); process.exit(1); });
