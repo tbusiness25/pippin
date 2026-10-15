@@ -187,8 +187,6 @@
       world.kind = kind;
       drawTop();   // the title says "Town" or "village" for the place we're in
       world.parts = build(THREE_, scene, kind);
-      if (world.backdrop) hideStatics(world.parts);
-      setBackdrop(kind);
       world.spots = [];
       spotsEl.innerHTML = '';
       const amb = world.amb || {};
@@ -208,25 +206,6 @@
       spotsEl.querySelectorAll('[data-npc]').forEach((b) => { b.onclick = () => talkTo(b.dataset.npc); });
       spotsEl.querySelectorAll('[data-line]').forEach((b) => { b.onclick = () => say(villagerLine(b.dataset.line, amb)); });
       spotsEl.querySelectorAll('[data-hi]').forEach((b) => { b.onclick = () => say(sprigLine()); });
-    }
-    // The painted backdrop (public/art/village/*.jpg) replaces the flat sky colour. If an image is missing, the sky colour stays.
-    function hideStatics(P) {
-      if (P.ground) P.ground.visible = false;
-      for (const o of P.statics || []) o.visible = false;
-    }
-    function setBackdrop(kind) {
-      const d = dayness() >= 0.5;
-      const name = kind === 'town' ? (d ? 'town-day' : 'town-night') : (d ? 'village-day' : 'village-dusk');
-      if (world.backdropName === name) return;
-      world.backdropName = name;
-      world.backdrop = false;
-      new THREE_.TextureLoader().load(`/art/village/${name}.jpg`, (tex) => {
-        if (world.backdropName !== name) return;
-        tex.colorSpace = THREE_.SRGBColorSpace;
-        scene.background = tex;
-        world.backdrop = true;
-        if (world.parts) hideStatics(world.parts);   // let the painting show
-      }, undefined, () => {});
     }
     function sprigLine() {
       const name = world.info.pet ? world.info.pet.name : 'Your sprig';
@@ -297,7 +276,7 @@
       const dayness = clamp(sunY * 1.6 + 0.25, 0, 1);
       const dusk = clamp(1 - Math.abs(sunY) * 3, 0, 1) * 0.6;
       sky.copy(NIGHT).lerp(DAY, dayness).lerp(DUSK, dusk);
-      if (!world.backdrop) scene.background = sky.clone();
+      scene.background = sky.clone();
       sunLight.intensity = 0.2 + 0.8 * dayness;
       sunLight.position.set(Math.cos(sunAng) * 20, Math.max(4, sunY * 20), 8);
       if (world.parts) { world.parts.sun.position.set(Math.cos(sunAng) * 22, sunY * 22, -12); world.parts.moon.position.set(-Math.cos(sunAng) * 22, -sunY * 22, -12); }
