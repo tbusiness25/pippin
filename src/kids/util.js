@@ -2,6 +2,7 @@
  * Shared helpers for the kids' modules and the Family section.
  *  - kidsLlm(messages)   : the model kids' features use (KIDS_LLM_URL / KIDS_LLM_MODEL, OpenAI-compatible).
  *                          Deliberately separate from the adult coach model and from any agent: no tools, no web.
+ *                          Local network only unless KIDS_LLM_ALLOW_CLOUD=true (see llmGuard.js).
  *  - transcribe(buf,mime): local Whisper (WHISPER_URL).
  *  - alertParents(text)  : web push to every parent, plus an optional Telegram message (ALERT_TELEGRAM_*).
  *  - dataDir(...parts)   : where kids' files live (KIDS_DATA_DIR, default /data/kids).
@@ -11,6 +12,7 @@
 const fs = require('fs');
 const path = require('path');
 const { pool } = require('../db');
+const llmGuard = require('./llmGuard');
 
 const DATA = process.env.KIDS_DATA_DIR || '/data/kids';
 const dataDir = (...p) => path.join(DATA, ...p);
@@ -21,9 +23,13 @@ const LLM_URL = (process.env.KIDS_LLM_URL || process.env.STORY_BASE_URL || '').r
 const LLM_MODEL = process.env.KIDS_LLM_MODEL || process.env.STORY_MODEL || '';
 const LLM_KEY = process.env.KIDS_LLM_API_KEY || '';
 const llmConfigured = () => !!(LLM_URL && LLM_MODEL);
+if (LLM_URL && !llmGuard.kidsLlmUrlAllowed(LLM_URL)) {
+  console.warn(`[kids-llm] the children’s model URL is not on your network, so kids' features will refuse to call it: ${LLM_URL.replace(/\/\/[^@/]*@/, '//')}`);
+}
 
 async function kidsLlm(messages, { maxTokens = 600, temperature = 0.6, json = false, model, timeoutMs = 120000 } = {}) {
   if (!llmConfigured()) throw new Error('KIDS_LLM_URL / KIDS_LLM_MODEL not configured');
+  llmGuard.assertKidsLlmUrl(LLM_URL);   // refuses before anything is sent
   const r = await fetch(`${LLM_URL}/chat/completions`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...(LLM_KEY ? { Authorization: `Bearer ${LLM_KEY}` } : {}) },
@@ -31,6 +37,7 @@ async function kidsLlm(messages, { maxTokens = 600, temperature = 0.6, json = fa
       ...(process.env.KIDS_LLM_REASONING_EFFORT ? { reasoning_effort: process.env.KIDS_LLM_REASONING_EFFORT } : {}),
       ...(json ? { response_format: { type: 'json_object' } } : {}) }),
     signal: AbortSignal.timeout(timeoutMs),
+    redirect: 'error',   // a redirect could send the children's text to another host
   });
   if (!r.ok) throw new Error(`kids model HTTP ${r.status}`);
   const d = await r.json();
@@ -69,4 +76,4 @@ async function audit(uid, event, payload = {}) {
 
 const localDate = (tz = process.env.TZ_DEFAULT || 'Europe/London', d = new Date()) => new Intl.DateTimeFormat('en-CA', { timeZone: tz }).format(d);
 
-module.exports = { kidsLlm, llmConfigured, transcribe, alertParents, parents, dataDir, childDir, ensureDir, audit, localDate, DATA };
+module.exports = { kidsLlm, llmConfigured, kidsLlmUrlAllowed: llmGuard.kidsLlmUrlAllowed, assertKidsLlmUrl: llmGuard.assertKidsLlmUrl, transcribe, alertParents, parents, dataDir, childDir, ensureDir, audit, localDate, DATA };

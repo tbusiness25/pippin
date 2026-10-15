@@ -11,6 +11,7 @@ const { createOpenAIBrain } = require('./openai');
 const { createHermesBrain } = require('./hermes');
 const { storyPrompt, parseJson } = require('./prompts');
 const { openaiClient } = require('./openai');
+const { assertKidsLlmUrl } = require('../kids/llmGuard');
 
 function templateStory({ petName, place }) {
   const finds = ['a very round pebble', 'a leaf shaped like a heart', 'a snail who knew the way home',
@@ -32,10 +33,13 @@ function createBrain(env) {
   if (env.STORY_BASE_URL && env.STORY_MODEL) {
     const complete = openaiClient({
       baseUrl: env.STORY_BASE_URL, apiKey: env.STORY_API_KEY, model: env.STORY_MODEL, timeoutMs: 60000,
-      extraBody: env.STORY_REASONING_EFFORT ? { reasoning_effort: env.STORY_REASONING_EFFORT } : {},
+      extraBody: env.STORY_REASONING_EFFORT ? { reasoning_effort: env.STORY_REASONING_EFFORT } : {}, redirect: 'error',
     });
     story = async (ctx) => {
-      try { return parseJson(await complete([{ role: 'user', content: storyPrompt(ctx) }], { json: true })); }
+      try {
+        assertKidsLlmUrl(env.STORY_BASE_URL);   // the story model is the children's model: local network only
+        return parseJson(await complete([{ role: 'user', content: storyPrompt(ctx) }], { json: true }));
+      }
       catch (e) { console.warn('[story] model failed, using template:', e.message); return templateStory(ctx); }
     };
   }

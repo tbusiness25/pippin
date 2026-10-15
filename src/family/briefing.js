@@ -11,6 +11,7 @@
  * Weather: BRIEF_LAT + BRIEF_LON (open-meteo.com, no key). Leave unset for no weather.
  */
 const calendar = require('./calendar');
+const { assertKidsLlmUrl } = require('../kids/llmGuard');
 
 const a = (fn) => (req, res, next) => Promise.resolve(fn(req, res, next)).catch(next);
 const env = (k, d = '') => process.env[k] || d;
@@ -76,6 +77,8 @@ async function llm(text) {
   const base = env('BRIEF_BASE_URL', env('STORY_BASE_URL')).replace(/\/$/, '');
   const model = env('BRIEF_MODEL', env('STORY_MODEL'));
   if (!base || !model) throw new Error('BRIEF_BASE_URL / BRIEF_MODEL not configured');
+  // Falls back to the children's endpoint (STORY_BASE_URL), so the same local-only rule applies.
+  assertKidsLlmUrl(base);
   const effort = env('BRIEF_REASONING_EFFORT', env('STORY_REASONING_EFFORT'));
   const key = env('BRIEF_API_KEY');
   const r = await fetch(`${base}/chat/completions`, {
@@ -84,6 +87,7 @@ async function llm(text) {
     body: JSON.stringify({ model, stream: false, max_tokens: 900, temperature: 0.6, messages: [{ role: 'user', content: text }],
       ...(effort ? { reasoning_effort: effort } : {}) }),
     signal: AbortSignal.timeout(parseInt(env('BRIEF_TIMEOUT_MS', '240000'), 10)),
+    redirect: 'error',
   });
   if (!r.ok) throw new Error(`briefing model HTTP ${r.status}`);
   const d = await r.json();

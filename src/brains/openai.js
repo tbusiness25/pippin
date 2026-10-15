@@ -4,13 +4,14 @@
  */
 const { COACH_PERSONA, planDayPrompt, storyPrompt, parseJson } = require('./prompts');
 
-function openaiClient({ baseUrl, apiKey, model, extraBody = {}, timeoutMs = 120000 }) {
+function openaiClient({ baseUrl, apiKey, model, extraBody = {}, timeoutMs = 120000, redirect }) {
   return async function complete(messages, { json = false } = {}) {
     const res = await fetch(`${baseUrl.replace(/\/$/, '')}/chat/completions`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', ...(apiKey ? { Authorization: `Bearer ${apiKey}` } : {}) },
       body: JSON.stringify({ model, messages, stream: false, ...(json && !/^(o\d|gpt-5)/i.test(model) ? { temperature: 0.4 } : {}), ...extraBody }),
       signal: AbortSignal.timeout(timeoutMs),
+      ...(redirect ? { redirect } : {}),
     });
     if (!res.ok) throw new Error(`brain HTTP ${res.status}: ${(await res.text()).slice(0, 200)}`);
     const data = await res.json();
