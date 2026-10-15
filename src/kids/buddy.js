@@ -17,12 +17,17 @@
  * only, transcribed with the local Whisper, then wiped — audio is never written to disk or kept.
  * Parents (Family → child → Buddy) can read every conversation, see every flag and mark flags reviewed.
  * A child whose settings.kids.no_alerts is true never triggers parent alerts (used by the red-team suite).
+ * Retention: messages are hard-deleted after KIDS_BUDDY_RETENTION_DAYS (default 90, 0 = keep forever) by a
+ * daily job (./retention.js). Only the child's Buddy messages are touched, and unreviewed safety flags are kept.
  */
 const express = require('express');
 const { pool } = require('../db');
 const util = require('./util');
 const sprig = require('./sprig');
 const safety = require('./safety');
+const retention = require('./retention');
+
+const RETENTION_DAYS = retention.daysFromEnv('KIDS_BUDDY_RETENTION_DAYS', 90);
 
 const LIMIT_ENABLED = String(process.env.KIDS_BUDDY_LIMIT_ENABLED || 'false').toLowerCase() === 'true';
 const DAILY_LIMIT_MIN = parseInt(process.env.KIDS_BUDDY_DAILY_MINUTES || '30', 10);
@@ -362,5 +367,17 @@ module.exports = {
       res.send(JSON.stringify({ exportedAt: new Date().toISOString(), child: req.kid.name, messages: rows }, null, 2));
     });
 
+  },
+
+  // Daily retention job (KIDS_BUDDY_RETENTION_DAYS). Buddy stores no audio, so there are no files to remove.
+  start() {
+    if (!(RETENTION_DAYS > 0)) return console.log('[kids] buddy: chat kept forever (KIDS_BUDDY_RETENTION_DAYS=0)');
+    console.log(`[kids] buddy: chat deleted after ${RETENTION_DAYS} days`);
+    retention.scheduleDaily('buddy', async () => {
+      // Unreviewed flags are kept until a parent marks them reviewed (same definition as the parent's "pending" count).
+      const r = await retention.purgeOld(pool, { table: 'kid_chat_messages', tsColumn: 'created_at', childColumn: 'child_id', days: RETENTION_DAYS,
+        keepWhere: 'flagged AND reviewed_at IS NULL' });
+      console.log(`[kids] buddy retention: ${r.deleted} messages deleted (older than ${RETENTION_DAYS} days, unreviewed flags kept)`);
+    });
   },
 };

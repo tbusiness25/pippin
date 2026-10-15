@@ -6,9 +6,13 @@
  *  - The book list is shared (kid_books), seeded from a JSON catalogue in the data dir
  *    (BOOKS_CATALOGUE, default <KIDS_DATA_DIR>/books/books-catalogue.json; covers in …/books/covers/).
  *    Status, owned and hidden are per child (kid_book_status).
- *  - Voice notes are KEPT (unlike Buddy chat): <KIDS_DATA_DIR>/<childId>/books/, a copy in AUDIO_STORE, and —
- *    when VOICE_NOTES_DIR is set and writable — a Markdown note + audio in the voice-notes folder, filed with the
- *    household's other kids' recordings (KIDS_VOICE_NOTES_SUBDIR, KIDS_VOICE_NOTES_INDEX).
+ *  - Voice notes are a KEEPSAKE (unlike Buddy chat): kept until a grown-up removes them (Family → child → Books →
+ *    Manage voice notes: Remove deletes the audio files and soft-deletes the row). <KIDS_DATA_DIR>/<childId>/books/, a copy in AUDIO_STORE, and — when
+ *    VOICE_NOTES_DIR is set and writable — a Markdown note + audio in the voice-notes folder, filed with the
+ *    household's other kids' recordings (KIDS_VOICE_NOTES_SUBDIR, KIDS_VOICE_NOTES_INDEX). Optional limit:
+ *    KIDS_BOOK_CHAT_RETENTION_DAYS (default 0 = keep forever). When set, a daily job hard-deletes older voice
+ *    notes and their audio files in the data dir and AUDIO_STORE (./retention.js). The Obsidian copies are NOT
+ *    removed by that job.
  *  - Stars: the first Book Chat for a book pays KIDS_BOOK_STARS (default 3, 0 = off) once ever, via the star ledger.
  *  - Sprig: book_started, book_finished, book_chat (first Book Chat per book), books_milestone (filling shelves).
  */
@@ -17,6 +21,7 @@ const path = require('path');
 const crypto = require('crypto');
 const express = require('express');
 const safety = require('./safety');
+const retention = require('./retention');
 
 const UUID = '[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}';
 const UUID_RE = new RegExp(`^${UUID}$`);
@@ -24,6 +29,7 @@ const STATUSES = new Set(['not_read', 'reading', 'finished']);
 const KINDS = new Set(['main', 'special', 'activity', 'standalone']);
 const SHELF_SIZE = 10;
 const BOOK_STARS = Math.max(0, parseInt(process.env.KIDS_BOOK_STARS ?? '3', 10) || 0);
+const BOOK_CHAT_RETENTION_DAYS = retention.daysFromEnv('KIDS_BOOK_CHAT_RETENTION_DAYS', 0);
 const MILESTONES = [
   [1, 'First book on the shelf!'], [5, 'Bookworm'], [10, 'A whole shelf!'], [20, 'Two full shelves'],
   [30, 'Library builder'], [50, 'Super reader'], [75, 'Book explorer'], [100, 'Hundred-book hero'],
@@ -188,6 +194,11 @@ function voiceExt(mime) {
   return 'webm';
 }
 const voiceFile = (kid, file) => (/^[a-z0-9-]+\.(webm|m4a|ogg|wav|mp3)$/.test(file || '') ? util.childDir(kid, 'books', file) : null);
+// The files one voice note owns: the child's copy and the back-up copy in AUDIO_STORE (book-<id>.<ext>).
+const voiceAudioPaths = (row) => {
+  const p = voiceFile({ id: row.child_id }, row.file);
+  return p ? [p, path.join(STORE, `book-${row.id}${path.extname(row.file)}`)] : [];
+};
 
 // Kids' recordings are filed with the household's other voice notes (an Obsidian-style folder), in the same
 // format the voice-note exporter uses, so they show up in the same "kids memories" index. `source: pippin-…`
@@ -645,8 +656,13 @@ module.exports = {
 
     r.post(`/books/parent/voice/${I}/remove`, parentOnly, wrap(async (req, res) => {
       const { rows: [v] } = await pool.query(
-        'UPDATE kid_book_voice SET removed_at=NOW() WHERE id=$1 AND child_id=$2 AND removed_at IS NULL RETURNING book_id, field', [req.params.id, req.kid.id]);
+        'UPDATE kid_book_voice SET removed_at=NOW() WHERE id=$1 AND child_id=$2 AND removed_at IS NULL RETURNING id, child_id, file, book_id, field', [req.params.id, req.kid.id]);
       if (!v) return res.status(404).json({ ok: false, error: 'not found' });
+      // The row stays (soft delete, history intact); the audio itself is deleted: the child's copy and the AUDIO_STORE backup.
+      for (const p of voiceAudioPaths(v)) {
+        try { await fs.promises.unlink(p); }
+        catch (e) { if (e.code !== 'ENOENT') console.warn('[books] voice audio not deleted:', e.message); }
+      }
       await logEvent(pool, req.kid, v.book_id, 'voice_remove', { voice_id: req.params.id, field: v.field }, 'parent');
       res.json({ ok: true });
     }));
@@ -663,5 +679,14 @@ module.exports = {
   start(deps) {
     util = deps.util;
     seedBooks(deps.pool).catch((e) => console.warn('[books] seed failed:', e.message));
+    if (!(BOOK_CHAT_RETENTION_DAYS > 0)) return console.log('[kids] book chat: voice notes kept until a grown-up removes them');
+    console.log(`[kids] book chat: voice notes deleted after ${BOOK_CHAT_RETENTION_DAYS} days`);
+    retention.scheduleDaily('book-chat', async () => {
+      const r = await retention.purgeOld(deps.pool, { table: 'kid_book_voice', tsColumn: 'created_at', childColumn: 'child_id',
+        days: BOOK_CHAT_RETENTION_DAYS, audioPaths: voiceAudioPaths });
+      const filed = r.rows.filter((x) => x.vault_note).length;
+      console.log(`[kids] book chat retention: ${r.deleted} voice notes deleted, ${r.audioRemoved} audio files removed, `
+        + `${r.audioFailed} failed, ${filed} also filed in the voice-notes folder (not removed)`);
+    });
   },
 };

@@ -205,7 +205,7 @@
     el.querySelector('#own').onclick = () => patch({ owned: b.owned == null ? true : b.owned === true ? false : null });
     el.querySelector('#hide').onclick = () => patch({ hidden: !b.hidden });
     el.querySelectorAll('[data-rm]').forEach((btn) => btn.onclick = async () => {
-      if (!confirm('Remove this voice note? (It is hidden, not destroyed — a copy stays in the voice-notes folder.)')) return;
+      if (!confirm('Remove this voice note? The recording is deleted and it is hidden from the list. A copy filed in the voice-notes folder is not removed.')) return;
       try { await api(c, `/parent/voice/${btn.dataset.rm}/remove`, { body: {} }); again(); } catch (e) { toast(e.message); }
     });
   }
