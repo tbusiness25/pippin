@@ -129,7 +129,7 @@ app.get('/manifest.json', async (req, res, next) => {
     const m = JSON.parse(brand(fs.readFileSync(path.join(PUBLIC, 'manifest.json'), 'utf8')));
     if (b.personal) {
       m.name = b.name; m.short_name = b.shortName;
-      m.id = `/?who=${encodeURIComponent(b.userId)}`;
+      if (b.userId) m.id = `/?who=${encodeURIComponent(b.userId)}`;
       if (b.colour) m.theme_color = b.colour;
     }
     res.type('application/manifest+json').set('Cache-Control', 'no-cache').send(JSON.stringify(m, null, 2));

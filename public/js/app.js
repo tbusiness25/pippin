@@ -219,29 +219,37 @@ window.APP = window.APP || (window.__BUILD__ && window.__BUILD__.appName) || "Ap
     };
   }
 
+  // Signed out, the server names adults only. Children have no tile: "Child sign-in" asks for a PIN and nothing else.
   function renderLogin(people = [], hint = null) {
     setTab(null);
     let pin = '';
-    let who = null;
-    // On a host tied to one person, go straight to their PIN pad (with a way to switch person).
-    if (hint && !renderLogin.chosen && !renderLogin.picking) renderLogin.chosen = hint.id;
-    if (people.length && !renderLogin.chosen) {
+    // On a host tied to one person, go straight to their PIN pad (with a way back to the picker).
+    if (hint && !renderLogin.chosen && !renderLogin.child && !renderLogin.picking) {
+      if (hint.role === 'child') renderLogin.child = true; else renderLogin.chosen = hint.id;
+    }
+    if (!renderLogin.chosen && !renderLogin.child) {
       $app.innerHTML = `<div class="stage">${Sprig.sprig({ colour: 'moss', stage: 'sprout', mood: 'happy', size: 140 })}</div>
-        <h1 class="center">Who’s this?</h1><div class="grid">${people.map((p) => `<button class="tile" data-u="${p.id}"><span class="em">🌱</span><b>${esc(p.name)}</b></button>`).join('')}</div>`;
-      $app.querySelectorAll('[data-u]').forEach((b) => b.onclick = () => { renderLogin.chosen = b.dataset.u; renderLogin.picking = false; renderLogin(people, hint); });
+        <h1 class="center">Who’s this?</h1><div class="grid">${people.map((p) => `<button class="tile" data-u="${p.id}"><span class="em">🌱</span><b>${esc(p.name)}</b></button>`).join('')}
+        <button class="tile" id="kidsign"><span class="em">🧒</span><b>Child sign-in</b></button></div>`;
+      $app.querySelectorAll('[data-u]').forEach((b) => b.onclick = () => { renderLogin.chosen = b.dataset.u; renderLogin.child = false; renderLogin.picking = false; renderLogin(people, hint); });
+      document.getElementById('kidsign').onclick = () => { renderLogin.child = true; renderLogin.picking = false; renderLogin(people, hint); };
       return;
     }
-    who = renderLogin.chosen || null;
+    const child = !!renderLogin.child;
+    const who = child ? null : renderLogin.chosen;
     const whoName = (people.find((p) => p.id === who) || {}).name;
+    const heading = child ? 'Child sign-in' : whoName ? `Hi, ${esc(whoName)}` : 'Welcome back';
     $app.innerHTML = `<div class="stage">${Sprig.sprig({ colour: 'moss', stage: 'sprout', mood: 'calm', size: 150 })}</div>
-      <h1 class="center">${whoName ? `Hi, ${esc(whoName)}` : 'Welcome back'}</h1>${people.length > 1 ? `<p class="center small"><a href="#login" id="notme">Not ${esc(whoName || 'you')}?</a></p>` : ''}<div class="pin-dots" id="dots"></div>
+      <h1 class="center">${heading}</h1><p class="center small"><a href="#login" id="notme">${child ? 'Not a child? Sign in as a grown-up' : `Not ${esc(whoName || 'you')}?`}</a></p><div class="pin-dots" id="dots"></div>
       <div class="pad">${[1, 2, 3, 4, 5, 6, 7, 8, 9, '', 0, '⌫'].map((k) => `<button ${k === '' ? 'disabled style="visibility:hidden"' : ''} data-k="${k}">${k}</button>`).join('')}</div>`;
     const dots = () => { document.getElementById('dots').innerHTML = Array.from({ length: Math.max(4, pin.length) }, (_, i) => `<span class="${i < pin.length ? 'on' : ''}"></span>`).join(''); };
     dots();
-    document.getElementById('notme')?.addEventListener('click', (e) => { e.preventDefault(); renderLogin.chosen = null; renderLogin.picking = true; renderLogin(people, hint); });
+    document.getElementById('notme')?.addEventListener('click', (e) => { e.preventDefault(); renderLogin.chosen = null; renderLogin.child = false; renderLogin.picking = true; renderLogin(people, hint); });
     const submit = async () => {
-      try { await api('/api/auth/login', { body: { pin, user_id: who } }); F_lock.rememberPin(pin); touch(); renderLogin.chosen = null; location.hash = '#home'; route(); }
-      catch (e) { toast(e.message); pin = ''; dots(); }
+      try {
+        await api('/api/auth/login', { body: child ? { pin, child: true } : { pin, user_id: who } });
+        F_lock.rememberPin(pin); touch(); renderLogin.chosen = null; renderLogin.child = false; location.hash = '#home'; route();
+      } catch (e) { toast(e.message); pin = ''; dots(); }
     };
     $app.querySelectorAll('.pad button').forEach((b) => b.onclick = () => {
       const k = b.dataset.k;

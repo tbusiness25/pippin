@@ -42,6 +42,11 @@ async function hintedUser(req) {
 async function brandFor(req) {
   const u = await hintedUser(req).catch(() => null);
   if (!u) return { name: APP_NAME, shortName: APP_NAME, colour: null, personal: false };
+  // A host tied to a child is generic for everyone, signed in or out: no child's name in the title, manifest or install name.
+  if (u.role === 'child') {
+    const generic = (process.env.HOST_APP_NAME || 'Pippin').slice(0, 30);
+    return { name: generic, shortName: generic.slice(0, 24), colour: u.colour || (u.settings && u.settings.accent) || null, personal: true, userId: null };
+  }
   const first = String(u.name).trim().split(/\s+/)[0];
   const possessive = /s$/i.test(first) ? `${first}’` : `${first}’s`;
   const app = (process.env.HOST_APP_NAME || APP_NAME).slice(0, 30);   // e.g. keep APP_NAME for the main host, a shared name per person

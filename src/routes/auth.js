@@ -14,14 +14,19 @@ function tooMany(res, ms) {
 const validPin = (p) => typeof p === 'string' && /^\d{4,8}$/.test(p);
 
 // Tells the UI whether this is a fresh install (show setup) or needs a PIN.
+// Signed out, this lists ADULTS only. Children are never named or listed here (not even as anonymous tiles):
+// they use the "Child sign-in" button, which asks for a PIN and nothing else (see childLogin).
 // With more than one person on this server, the PIN screen asks who you are — unless the host
 // this was opened on is tied to one person (HOST_USERS), in which case that person is preselected.
+// A host tied to a child gets only { role: 'child' }, never the child's name or id.
 router.get('/status', async (req, res) => {
   const { rows } = await pool.query(`SELECT id, name, role FROM users WHERE deleted_at IS NULL ORDER BY created_at`);
   const sess = readSession(req);
   const hint = rows.length > 1 ? await hintedUser(req).catch(() => null) : null;
+  const adults = rows.filter((u) => u.role !== 'child').map(({ id, name, role }) => ({ id, name, role }));
+  const hintOut = !hint ? null : hint.role === 'child' ? { role: 'child' } : { id: hint.id, name: hint.name, role: hint.role };
   res.json({ ok: true, setup: rows.length === 0, setupCode: rows.length === 0 && !!process.env.SETUP_CODE, signedIn: !!(sess && sess.uid),
-    people: rows.length > 1 ? rows : [], hint: hint ? { id: hint.id, name: hint.name, role: hint.role } : null });
+    people: adults, hint: hintOut });
 });
 
 // First-run only: create the single owner account.
@@ -40,14 +45,37 @@ router.post('/setup', async (req, res) => {
   res.json({ ok: true });
 });
 
+// Child sign-in by PIN alone. The PIN is checked against each child's hash (or only the child this host is tied
+// to). One matching child signs in; no name or id is returned. Failures share one lockout bucket, because a
+// child's PIN has no per-account key of its own to guess against.
+async function childLogin(req, res, pin, hostChildId) {
+  const keys = [`ip:${req.ip}`, 'child:signin'];
+  const wait = limit.lockedFor(keys);
+  if (wait) return tooMany(res, wait);
+  const { rows } = await pool.query(
+    `SELECT id, pin_hash FROM users WHERE role='child' AND deleted_at IS NULL AND ($1::uuid IS NULL OR id=$1::uuid)`, [hostChildId]);
+  const matches = [];
+  for (const r of rows) if (await verifyPin(pin, r.pin_hash)) matches.push(r.id);
+  if (matches.length === 1) {
+    limit.ok(keys);
+    setSessionCookie(req, res, signSession(matches[0]));
+    return res.json({ ok: true });
+  }
+  limit.fail(keys);
+  await new Promise((r) => setTimeout(r, 800));   // slow down guessing
+  if (matches.length > 1) return res.status(409).json({ ok: false, error: 'That PIN is used by two children — ask a parent to change one' });
+  res.status(401).json({ ok: false, error: 'That PIN didn’t match' });
+}
+
 router.post('/login', async (req, res) => {
-  const { pin } = req.body || {};
-  let user_id = /^[0-9a-f-]{36}$/i.test((req.body || {}).user_id || '') ? req.body.user_id : null;
+  const { pin, child } = req.body || {};
   if (!validPin(pin)) return res.status(400).json({ ok: false, error: 'Enter your PIN' });
+  const hint = await hintedUser(req).catch(() => null);
+  if (child === true || hint?.role === 'child') return childLogin(req, res, pin, hint?.role === 'child' ? hint.id : null);
+  let user_id = /^[0-9a-f-]{36}$/i.test((req.body || {}).user_id || '') ? req.body.user_id : null;
   // A PIN is only ever checked against ONE person: the one chosen, else the one this host is tied to,
   // else the only person on the server. Never "whoever's PIN happens to match first".
   if (!user_id) {
-    const hint = await hintedUser(req).catch(() => null);
     if (hint) user_id = hint.id;
     else {
       const { rows: all } = await pool.query('SELECT id FROM users WHERE deleted_at IS NULL LIMIT 2');
@@ -58,7 +86,8 @@ router.post('/login', async (req, res) => {
   const keys = keysFor(req, user_id);
   const wait = limit.lockedFor(keys);
   if (wait) return tooMany(res, wait);
-  const { rows } = await pool.query('SELECT id, pin_hash FROM users WHERE id=$1 AND deleted_at IS NULL', [user_id]);
+  // Children never sign in through the adult route (they use childLogin), so a child's id gets no adult PIN check.
+  const { rows } = await pool.query("SELECT id, pin_hash FROM users WHERE id=$1 AND deleted_at IS NULL AND role <> 'child'", [user_id]);
   if (rows.length && await verifyPin(pin, rows[0].pin_hash)) {
     limit.ok(keys);
     setSessionCookie(req, res, signSession(rows[0].id));
@@ -77,7 +106,7 @@ router.post('/verify-pin', async (req, res) => {
   const keys = keysFor(req, sess.uid);
   const wait = limit.lockedFor(keys);
   if (wait) return tooMany(res, wait);
-  const { rows } = await pool.query('SELECT pin_hash FROM users WHERE id=$1', [sess.uid]);
+  const { rows } = await pool.query('SELECT pin_hash FROM users WHERE id=$1 AND deleted_at IS NULL', [sess.uid]);
   if (rows.length && await verifyPin(pin, rows[0].pin_hash)) { limit.ok(keys); return res.json({ ok: true }); }
   limit.fail(keys);
   await new Promise((r) => setTimeout(r, 800));
