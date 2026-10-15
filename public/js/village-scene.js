@@ -31,7 +31,7 @@
   // ------------------------------------------------------------------ the world
   const C = { grass: 0x9ad17a, path: 0xe9d6a4, cobble: 0xcbb9a0, trunk: 0x8b5e3c, leaves: 0x5fae5a, soil: 0x8a6a4a, crop: 0x7bc957,
     pond: 0x7fc8e8, wall: 0xf6e7c8, wall2: 0xf8d9b0, roof: 0xd9674f, roof2: 0x9c6b4e, shop: 0xf3c98b, bake: 0xf2b8a0, red: 0xe8473f,
-    skin: 0xf5d2b0, sprig: 0xffd27a, dark: 0x3b2d2a, glass: 0xbfe6ff, stone: 0xbdb6aa };
+    skin: 0xf5d2b0, sprig: 0xffd27a, dark: 0x3b2d2a, glass: 0xbfe6ff, stone: 0xbdb6aa, white: 0xfffaf0, wood: 0x9a6a45, sign: 0x3b5b8c };
 
   /** 0 (night) → 1 (full day), from the London hour, the same curve the sky uses. */
   function dayness() {
@@ -40,32 +40,102 @@
   }
 
   /** Build everything for 'home' (my village) or 'town'. Returns the parts the loop needs. */
+  // Textures are drawn on a canvas once per page, so nothing is downloaded.
+  const TEX = {};
+  function seeded(seed) { let v = seed >>> 0; return () => ((v = (v * 1664525 + 1013904223) >>> 0) / 4294967296); }
+  function texture(THREE, name) {
+    if (TEX[name]) return TEX[name];
+    const size = 256, c = document.createElement('canvas'); c.width = c.height = size;
+    const g = c.getContext('2d'), r = seeded(name.length * 97 + 7);
+    const speckle = (base, dots, shades) => {
+      g.fillStyle = base; g.fillRect(0, 0, size, size);
+      for (let i = 0; i < dots; i++) { g.fillStyle = shades[Math.floor(r() * shades.length)]; g.globalAlpha = 0.2 + r() * 0.4; g.beginPath(); g.arc(r() * size, r() * size, 1 + r() * 3, 0, Math.PI * 2); g.fill(); }
+      g.globalAlpha = 1;
+    };
+    if (name === 'grass') speckle('#9ad17a', 900, ['#7fbf5c', '#b6e08a', '#86c466', '#a8d878']);
+    else if (name === 'path') speckle('#e9d6a4', 500, ['#dcc38f', '#f3e4bf', '#cdb47c']);
+    else if (name === 'road') speckle('#5b5f66', 500, ['#4d5058', '#6a6e76', '#50545c']);
+    else if (name === 'cobble') {
+      g.fillStyle = '#8f8576'; g.fillRect(0, 0, size, size);
+      for (let y = 0; y < size; y += 32) for (let x = (y / 32) % 2 ? -16 : 0; x < size; x += 32) {
+        g.fillStyle = ['#d8c7ad', '#cdbb9f', '#e2d3ba'][Math.floor(r() * 3)];
+        g.beginPath(); g.roundRect ? g.roundRect(x + 2, y + 2, 28, 28, 8) : g.rect(x + 2, y + 2, 28, 28); g.fill();
+      }
+    }
+    const t = new THREE.CanvasTexture(c);
+    t.wrapS = t.wrapT = THREE.RepeatWrapping;
+    t.repeat.set(name === 'grass' ? 8 : name === 'cobble' ? 18 : 3, name === 'grass' ? 8 : name === 'cobble' ? 18 : 3);
+    t.colorSpace = THREE.SRGBColorSpace;
+    return (TEX[name] = t);
+  }
+
+  /** Build everything for 'home' (my village) or 'town'. Returns the parts the loop needs. */
   function build(THREE, scene, kind) {
     const mats = {};
     const m = (c) => (mats[c] = mats[c] || new THREE.MeshLambertMaterial({ color: c }));
-    const statics = [];   // architecture the painted backdrop already shows; hidden while a backdrop is up
-    const add = (mesh, x = 0, y = 0, z = 0) => { mesh.position.set(x, y, z); scene.add(mesh); statics.push(mesh); return mesh; };
-    const box = (w, h, d, c, x, y, z) => add(new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m(c)), x, y, z);
-    const cyl = (r1, r2, h, c, x, y, z, seg = 8) => add(new THREE.Mesh(new THREE.CylinderGeometry(r1, r2, h, seg), m(c)), x, y, z);
-    const cone = (r, h, c, x, y, z, seg = 4) => add(new THREE.Mesh(new THREE.ConeGeometry(r, h, seg), m(c)), x, y, z);
-    const ball = (r, c, x, y, z) => add(new THREE.Mesh(new THREE.SphereGeometry(r, 10, 8), m(c)), x, y, z);
-    const ground = new THREE.Mesh(new THREE.PlaneGeometry(40, 40), m(kind === 'town' ? C.cobble : C.grass));
-    ground.rotation.x = -Math.PI / 2; scene.add(ground);
-    const parts = { villagers: [], spots: [], bus: null, sun: null, moon: null, sprig: null, ground };
+    const mapped = (name) => (mats['tex:' + name] = mats['tex:' + name] || new THREE.MeshLambertMaterial({ map: texture(THREE, name) }));
+    const mesh = (geo, mat, x = 0, y = 0, z = 0, into = scene) => { const o = new THREE.Mesh(geo, mat); o.position.set(x, y, z); into.add(o); return o; };
+    const box = (w, h, d, c, x, y, z, into) => mesh(new THREE.BoxGeometry(w, h, d), m(c), x, y, z, into);
+    const cyl = (r1, r2, h, c, x, y, z, seg = 8, into) => mesh(new THREE.CylinderGeometry(r1, r2, h, seg), m(c), x, y, z, into);
+    const cone = (r, h, c, x, y, z, seg = 4, into) => mesh(new THREE.ConeGeometry(r, h, seg), m(c), x, y, z, into);
+    const ball = (r, c, x, y, z, into) => mesh(new THREE.SphereGeometry(r, 10, 8), m(c), x, y, z, into);
+    const group = (x, z, rot = 0) => { const g = new THREE.Group(); g.position.set(x, 0, z); g.rotation.y = rot; scene.add(g); return g; };
+    const parts = { villagers: [], spots: [], bus: null, sun: null, moon: null, sprig: null, ground: null, routes: [] };
+
+    parts.ground = mesh(new THREE.PlaneGeometry(40, 40), mapped(kind === 'town' ? 'cobble' : 'grass'));
+    parts.ground.rotation.x = -Math.PI / 2;
+    const lamp = (x, z) => { const g = group(x, z); cyl(0.07, 0.09, 2.2, C.dark, 0, 1.1, 0, 6, g); mesh(new THREE.SphereGeometry(0.22, 8, 6), new THREE.MeshBasicMaterial({ color: 0xffe49a }), 0, 2.3, 0, g); return g; };
+    const tree = (x, z, s = 1) => { const g = group(x, z); cyl(0.16 * s, 0.22 * s, 1.1 * s, C.trunk, 0, 0.55 * s, 0, 6, g); cone(1.0 * s, 1.4 * s, C.leaves, 0, 1.7 * s, 0, 6, g); cone(0.7 * s, 1.1 * s, 0x4e9e4e, 0, 2.5 * s, 0, 6, g); return g; };
+    const bench = (x, z, rot = 0) => { const g = group(x, z, rot); box(1.4, 0.1, 0.45, C.wood, 0, 0.45, 0, g); box(1.4, 0.45, 0.08, C.wood, 0, 0.75, -0.22, g); box(0.1, 0.45, 0.4, C.dark, -0.6, 0.22, 0, g); box(0.1, 0.45, 0.4, C.dark, 0.6, 0.22, 0, g); return g; };
 
     if (kind === 'home') {
       // paths
-      box(1.2, 0.02, 22, C.path, -0.5, 0.01, -2); box(16, 0.02, 1.2, C.path, -4, 0.01, 2.5);
-      // houses
-      const house = (x, z, wall) => { box(3, 2.2, 3, wall, x, 1.1, z); cone(2.5, 1.6, C.roof, x, 2.9, z, 4).rotation.y = Math.PI / 4;
-        box(0.7, 1.1, 0.1, C.roof2, x, 0.55, z + 1.52); };
+      mesh(new THREE.BoxGeometry(1.2, 0.03, 22), mapped('path'), -0.5, 0.015, -2);
+      mesh(new THREE.BoxGeometry(16, 0.03, 1.2), mapped('path'), -4, 0.015, 2.5);
+      // houses: walls, a gabled roof, chimney, door, two windows with frames, a window box with flowers
+      const house = (x, z, wall, rot = 0) => {
+        const g = group(x, z, rot), W = 3, D = 3, H = 2.2;
+        box(W, H, D, wall, 0, H / 2, 0, g);
+        cone(2.45, 1.5, C.roof, 0, H + 0.75, 0, 4, g).rotation.y = Math.PI / 4;
+        box(0.42, 1.2, 0.42, C.stone, 0.8, H + 0.9, -0.5, g);
+        box(0.8, 1.15, 0.08, C.wood, 0, 0.58, D / 2 + 0.03, g);
+        for (const sx of [-1, 1]) { box(0.78, 0.78, 0.06, C.white, sx * 0.95, 1.4, D / 2 + 0.03, g); box(0.62, 0.62, 0.08, C.glass, sx * 0.95, 1.4, D / 2 + 0.06, g); }
+        box(1.5, 0.14, 0.26, C.wood, 0.95, 0.85, D / 2 + 0.14, g);
+        [0xff7a9c, 0xffd166, 0xf28bd3, 0xffffff].forEach((c, i) => ball(0.11, c, 0.55 + i * 0.27, 1.0, D / 2 + 0.22, g));
+        return g;
+      };
       house(-6, -5, C.wall); house(-1, -7, C.wall2);
-      // shop & pond & plots
-      box(3, 2, 2.6, C.shop, 5, 1, -5); cone(2.2, 1.4, C.roof2, 5, 2.7, -5, 4).rotation.y = Math.PI / 4;
-      cyl(2.2, 2.2, 0.1, C.pond, 6, 0.05, 4, 20);
-      for (const [x, z] of [[-7, 4], [-4, 4]]) { box(2, 0.12, 1.2, C.soil, x, 0.06, z); for (let i = -2; i <= 2; i++) ball(0.18, C.crop, x + i * 0.35, 0.3, z); }
-      // trees & bus stop
-      for (const [x, z] of [[-10, -2], [-9, 6], [10, -4], [11, 3], [2, -10], [-3, 9], [9, 9]]) { cyl(0.18, 0.22, 1, C.trunk, x, 0.5, z, 6); ball(0.9, C.leaves, x, 1.6, z); }
+      // shop with a striped awning
+      const sg = group(5, -5);
+      box(3, 2, 2.6, C.shop, 0, 1, 0, sg); cone(2.2, 1.4, C.roof2, 0, 2.7, 0, 4, sg).rotation.y = Math.PI / 4;
+      for (let i = -1; i <= 1; i++) box(0.95, 0.3, 0.9, i % 2 ? C.red : C.white, i * 1.0, 1.8, 1.4, sg);
+      box(0.8, 0.9, 0.08, C.glass, -0.85, 0.9, 1.31, sg); box(0.8, 0.9, 0.08, C.glass, 0.85, 0.9, 1.31, sg);
+      // pond with stones around the rim and lily pads
+      const pg = group(6, 4);
+      cyl(2.2, 2.2, 0.1, C.pond, 0, 0.05, 0, 20, pg);
+      for (let i = 0; i < 14; i++) { const a = (i / 14) * Math.PI * 2; ball(0.16, C.stone, Math.cos(a) * 2.25, 0.08, Math.sin(a) * 2.25, pg); }
+      [[-0.8, 0.4], [0.6, -0.5], [0.2, 0.9], [-0.4, -1.0]].forEach(([x, z]) => cyl(0.32, 0.32, 0.03, C.leaves, x, 0.12, z, 10, pg));
+      // vegetable plots with fences
+      for (const [x, z] of [[-7, 4], [-4, 4]]) {
+        box(2, 0.12, 1.2, C.soil, x, 0.06, z);
+        for (let r = -1; r <= 1; r++) for (let i = -2; i <= 2; i++) ball(0.16, [0x7bc957, 0x5fae5a, 0x9ad17a][(i + 2) % 3], x + i * 0.35, 0.3, z + r * 0.35);
+      }
+      for (let x = -8.6; x <= -2.6; x += 0.4) box(0.12, 0.7, 0.06, C.white, x, 0.35, 5.9);
+      box(6, 0.08, 0.06, C.white, -5.6, 0.55, 5.9); box(6, 0.08, 0.06, C.white, -5.6, 0.25, 5.9);
+      // trees
+      for (const [x, z, s] of [[-10, -2, 1], [-9, 6, 0.9], [10, -4, 1.1], [11, 3, 1], [2, -10, 1.2], [-3, 9, 0.9], [9, 9, 1]]) tree(x, z, s);
+      // lamp posts, a bench, and a flower bed
+      lamp(-2.6, 0.3); lamp(3.6, 1.6);
+      bench(3.2, -0.8, 0.2);
+      box(3, 0.16, 0.7, C.soil, -10, 0.08, 4); for (let i = -1; i <= 1; i++) ball(0.2, 0xff7a9c, -10 + i, 0.32, 4.2);
+      // a wandering sprig's patch, scattered flowers that keep off the paths and buildings
+      const rnd = seeded(11), flowerCols = [0xff7a9c, 0xffd166, 0xf28bd3, 0xffffff, 0xa8d8ff];
+      for (let n = 0, tries = 0; n < 28 && tries < 400; tries++) {
+        const x = (rnd() * 2 - 1) * 12, z = (rnd() * 2 - 1) * 11;
+        if (Math.abs(x + 0.5) < 1.5 || Math.abs(z - 2.5) < 1.6 || Math.hypot(x - 6, z - 4) < 2.8 || Math.hypot(x - 5, z + 5) < 2.6 || Math.hypot(x + 6, z + 5) < 2.6 || Math.hypot(x + 1, z + 7) < 2.6) continue;
+        ball(0.09, flowerCols[n % flowerCols.length], x, 0.09, z); n++;
+      }
+      // the bus stop
       parts.stopAt = [0, 8.2];
       parts.stopPole = cyl(0.07, 0.07, 1.6, C.dark, 0, 0.8, 8.2, 6); parts.stopSign = box(1.1, 0.5, 0.08, C.wall, 0, 1.7, 8.2);
       parts.bus = null;
@@ -78,14 +148,40 @@
         { c: 0xf0c674, hat: 0xd9674f, route: [[-4, 6, 'idle', 4], [0, 6.2, 'idle', 3], [-9, 0.5, 'sweep', 5]] },
       ];
     } else {
-      // town: stalls & buildings
-      const shop = (x, z, wall, awning, label) => { box(3, 2.3, 2.6, wall, x, 1.15, z); box(3.2, 0.4, 0.9, awning, x, 2.2, z + 1.3); parts.spots.push({ id: label, at: [x, 0.4, z + 2.1] }); };
-      cyl(0.09, 0.09, 4.5, C.dark, -6, 2.25, -4.5, 6); ball(0.5, 0xffffff, -6, 4.9, -4.5); box(1.8, 1.2, 1.2, C.wall, -6, 0.6, -2.4);
+      // town: a road for the bus, shops with striped awnings and signs, a museum, a weather station
+      mesh(new THREE.BoxGeometry(40, 0.03, 3), mapped('road'), 0, 0.015, 7);
+      const shop = (x, z, wall, awning, label, rot = 0) => {
+        const g = group(x, z, rot);
+        box(3, 2.3, 2.6, wall, 0, 1.15, 0, g);
+        for (let i = -1; i <= 1; i++) box(0.95, 0.4, 0.9, i % 2 ? awning : C.white, i * 1.0, 2.2, 1.2, g);
+        box(0.8, 0.9, 0.08, C.glass, -0.85, 1.0, 1.31, g); box(0.8, 0.9, 0.08, C.glass, 0.85, 1.0, 1.31, g);
+        box(0.7, 1.1, 0.08, C.wood, 0, 0.55, 1.31, g);
+        box(2.4, 0.42, 0.1, C.sign, 0, 2.85, 1.3, g);
+        parts.spots.push({ id: label, at: [x, 0.4, z + 2.1] });
+        return g;
+      };
+      // weather station (Barnaby)
+      const ws = group(-6, -4.5);
+      cyl(0.09, 0.09, 4.5, C.dark, 0, 2.25, 0, 6, ws); ball(0.5, 0xffffff, 0, 4.9, 0, ws);
+      box(1.8, 1.2, 1.2, C.wall, 0, 0.6, 2.1, ws); cone(1.3, 0.8, C.roof2, 0, 1.6, 2.1, 4, ws).rotation.y = Math.PI / 4;
+      parts.spots.push({ id: 'barnaby', at: [-6, 0.4, -2.5] });
+      // newsagent (Mabel) and bakery (Gus)
       shop(-1, -6, C.wall2, C.red, 'mabel');
-      cyl(0.5, 0.5, 2.6, C.stone, 3.5, 1.3, -6, 8); cyl(0.5, 0.5, 2.6, C.stone, 6.5, 1.3, -6, 8); box(4.5, 0.4, 2.2, C.stone, 5, 2.8, -6); cone(2.8, 1.2, C.stone, 5, 3.9, -6, 4).rotation.y = Math.PI / 4;
-      shop(-5, 3, C.bake, 0xffffff, 'gus');
-      box(0.6, 0.2, 2, C.path, 5, 0.1, 2);
-      parts.spots.push({ id: 'barnaby', at: [-6, 0.4, -2.5] }, { id: 'fig', at: [5, 0.4, -3.6] }, { id: 'pip', at: [3.1, 0.4, 6.3] });
+      shop(-5, 3, C.bake, 0xffb84d, 'gus');
+      // museum (Fig): steps, portico with columns, pediment
+      const mg = group(5, -6);
+      box(5, 0.4, 3.2, C.stone, 0, 0.2, 0.4, mg);
+      box(4.4, 2.6, 2.6, C.stone, 0, 1.7, -0.2, mg);
+      for (const x of [-1.8, -0.6, 0.6, 1.8]) cyl(0.22, 0.22, 2.4, 0xf4efe3, x, 1.7, 1.25, 8, mg);
+      cone(2.8, 1.2, C.stone, 0, 3.3, -0.2, 4, mg).rotation.y = Math.PI / 4;
+      box(0.8, 1.2, 0.1, C.wood, 0, 0.8, 1.5, mg);
+      parts.spots.push({ id: 'fig', at: [5, 0.4, -3.6] });
+      // pip's stop, benches, planters, lamps and trees
+      parts.spots.push({ id: 'pip', at: [3.1, 0.4, 6.3] });
+      lamp(-2.5, 0.8); lamp(2.6, 1.2); lamp(-8, -1);
+      bench(-3.5, 6.2); bench(1.8, 0.6, Math.PI / 2);
+      for (const [x, z] of [[-3.5, -1.2], [3.5, 1.0], [-7.5, 1.8]]) { box(1.6, 0.4, 0.6, C.soil, x, 0.2, z); ball(0.3, 0x7bc957, x, 0.55, z); }
+      tree(-10, -7, 0.9); tree(9, -9, 1.1); tree(11, 2, 0.8);
       parts.stopAt = [0, 0];
       parts.routes = [{ c: 0xb4e0a0, hat: 0x7a4e2d, route: [[-2, 1, 'idle', 4], [1, 4, 'idle', 3], [-1, 1.5, 'idle', 2]] },
         { c: 0xd9b3f0, hat: 0x5c3b8a, route: [[2, -2, 'idle', 3], [4, 2, 'idle', 4], [-4, -1, 'idle', 3]] }];
@@ -109,9 +205,6 @@
     }
     // the sun and moon
     parts.sun = ball(0.9, 0xfff3a0, 0, 10, -12); parts.moon = ball(0.7, 0xe8ecff, 0, -10, -12);
-    // what stays visible over a painted backdrop: the bus stop, sun and moon, the ground-level people and the bus
-    const keep = new Set([parts.stopPole, parts.stopSign, parts.sun, parts.moon, ground]);
-    parts.statics = statics.filter((o) => !keep.has(o));
     // villagers
     for (const v of parts.routes || []) parts.villagers.push(person(THREE, scene, v.c, v.hat, v.route));
     return parts;
